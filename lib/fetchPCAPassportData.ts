@@ -1,6 +1,8 @@
+'use cache'
+
 import { cache } from 'react';
 import { unstable_cache } from 'next/cache';
-import { PCAFileLocation } from '@/config/pca-files';
+import { PCAFileLocation } from '@/config/pca-location-config';
 import chalk from 'chalk';
 import { parse } from "csv-parse/sync";
 import path from 'path';
