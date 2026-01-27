@@ -16,29 +16,33 @@ import {
 // Menu items.
 const items = [
   {
-    title: "Home",
+    title: "Data Explorer",
     url: "#",
-    icon: Home,
+    icon: Home
   },
   {
     title: "Inbox",
     url: "#",
     icon: Inbox,
+    inactive: true,
   },
   {
     title: "Calendar",
     url: "#",
     icon: Calendar,
+    inactive: true,
   },
   {
     title: "Search",
     url: "#",
     icon: Search,
+    inactive: true,
   },
   {
     title: "Settings",
     url: "#",
     icon: Settings,
+    inactive: true,
   },
 ]
 
@@ -51,7 +55,10 @@ export function AppSidebar() {
             <SidebarMenu>
               {items.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton render={(props) => <a href={item.url} {...props} />}>
+                  <SidebarMenuButton 
+                    render={item.inactive ? undefined : (props) => <a href={item.url} {...props} />}
+                    disabled={item.inactive}
+                  >
                     <item.icon />
                     <span>{item.title}</span>
                   </SidebarMenuButton>
