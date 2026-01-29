@@ -8,21 +8,7 @@ import { parse } from "csv-parse/sync";
 import path from 'path';
 import fs from 'fs';
 
-function replaceNullsWithMissing(value: any): any {
-  if (value === null) return 'N/A';
-
-  if (Array.isArray(value)) {
-    return value.map(replaceNullsWithMissing);
-  }
-
-  if (typeof value === 'object' && value !== null) {
-    return Object.fromEntries(
-      Object.entries(value).map(([key, val]) => [key, replaceNullsWithMissing(val)])
-    );
-  }
-
-  return value;
-}
+import { replaceNullsWithMissing } from '@/lib/dataProcessing'
 
 async function fetchAndParsePCAFile(PCAFileURL: string): Promise<any> {
   const response = await fetch(PCAFileURL, { next: { revalidate: 3600 } });

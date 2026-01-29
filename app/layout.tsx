@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Inter } from "next/font/google";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
+import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/app-sidebar"
 import { NuqsAdapter } from 'nuqs/adapters/next/app'
 import "./globals.css";
@@ -33,10 +33,10 @@ export default function RootLayout({
         <NuqsAdapter>
           <SidebarProvider>
             <AppSidebar />
-            <main className="p-2">
+            <SidebarInset className="p-2">
               <SidebarTrigger className="sticky top-2 z-50" />
               {children}
-            </main>
+            </SidebarInset>
           </SidebarProvider>
         </NuqsAdapter>
       </body>
