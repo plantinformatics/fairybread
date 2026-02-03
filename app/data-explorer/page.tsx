@@ -4,6 +4,7 @@ import dynamic from "next/dynamic"
 import { useQueryStates, parseAsString } from 'nuqs';
 import { useEffect, useState, useMemo } from 'react';
 import { fetchPCAPassportData } from '@/lib/fetchPCAPassportData';
+import NuqsDataGridDemo from '@/components/filters/nuqs';
 
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -70,7 +71,10 @@ export default function Page() {
             style={{ width: "100%", height: "100%" }}
             // onInitialized={ensureGraphDivisBound}
           />
-        </div>
+      </div>
+      <div>
+        <NuqsDataGridDemo></NuqsDataGridDemo>
+      </div>
     </div>
   );
 }
