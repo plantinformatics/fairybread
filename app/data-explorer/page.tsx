@@ -73,7 +73,7 @@ export default function Page() {
           />
       </div>
       <div>
-        <NuqsDataGridDemo></NuqsDataGridDemo>
+        <NuqsDataGridDemo PCAPassportData={data}></NuqsDataGridDemo>
       </div>
     </div>
   );
