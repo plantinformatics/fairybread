@@ -14,11 +14,11 @@ const buttonVariants = cva(
         destructive:
           'bg-destructive text-destructive-foreground hover:bg-destructive/90 data-[state=open]:bg-destructive/90',
         secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/90 data-[state=open]:bg-secondary/90',
-        outline: 'bg-background text-accent-foreground border border-input hover:bg-accent data-[state=open]:bg-accent',
+        outline:
+          'bg-background text-foreground border border-border hover:bg-accent hover:text-primary-foreground data-[state=open]:bg-accent data-[state=open]:text-primary-foreground',
         dashed:
           'text-accent-foreground border border-input border-dashed bg-background hover:bg-accent hover:text-accent-foreground data-[state=open]:text-accent-foreground',
-        ghost:
-          'text-accent-foreground hover:bg-accent hover:text-accent-foreground data-[state=open]:bg-accent data-[state=open]:text-accent-foreground',
+        ghost: 'hover:bg-muted hover:text-foreground dark:hover:bg-muted/50',
         dim: 'text-muted-foreground hover:text-foreground data-[state=open]:text-foreground',
         foreground: '',
         inverse: '',
@@ -70,11 +70,6 @@ const buttonVariants = cva(
     },
     compoundVariants: [
       // Icons opacity for default mode
-      {
-        variant: 'ghost',
-        mode: 'default',
-        className: '[&_svg:not([role=img]):not([class*=text-]):not([class*=opacity-])]:opacity-60',
-      },
       {
         variant: 'outline',
         mode: 'default',
