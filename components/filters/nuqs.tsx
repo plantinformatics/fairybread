@@ -31,9 +31,9 @@ export default function NuqsDataGridDemo(
 ) {
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
-    pageSize: 20,
+    pageSize: 25,
   });
-  const [sorting, setSorting] = useState<SortingState>([{ id: 'name', desc: false }]);
+  const [sorting, setSorting] = useState<SortingState>([{ id: 'genotypeID', desc: false }]);
 
   const [filters, setFilters] = useState<Filter[]>([]);
   const urlDebounceRef = useRef<NodeJS.Timeout | null>(null);
@@ -68,7 +68,6 @@ export default function NuqsDataGridDemo(
   // Apply filters to data based on current filters state
   const filteredData = useMemo(() => {
     let filtered = [...PCAPassportData];
-    console.log("this is filtered " + filtered)
     // const active = filters.filter((f) => (Array.isArray(f.values) ? f.values.length > 0 : !!f.values));
     // active.forEach((filter) => {
     //   const { field, operator, values } = filter;

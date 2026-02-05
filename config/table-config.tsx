@@ -48,10 +48,12 @@ const addSortingDropdownFn = (column: Column<PCAPassportData>, accessorKey: stri
 
 export const columns: ColumnDef<PCAPassportData>[] = [
     {
+        id: "genotypeID",
         accessorKey: "genotypeID",
-        header: "Genotype ID"
+        header: "Genotype ID",
     },
     {
+        id: "accessionNumber",
         accessorKey: "accessionNumber",
         header: "Accession Number",
         cell: ({ row }) => {

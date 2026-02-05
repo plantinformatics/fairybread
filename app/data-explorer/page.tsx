@@ -25,6 +25,7 @@ export default function Page() {
   });
 
   const [data, setData] = useState<any[]>([]);
+  const [tableData, setTableData] = useState<any[]>([])
   const [loading, setLoading] = useState(true);
 
   const dynamicLayout = useMemo(() => ({
@@ -37,6 +38,7 @@ export default function Page() {
       setLoading(true);
       const PCAPassportData = await fetchPCAPassportData(file);
       const sortedEntries = extractSortAndFilter(PCAPassportData, groupBy, 15);
+      setTableData(PCAPassportData);
       const plotData = createPlotData(sortedEntries, groupBy);
       setData(plotData);
       setLoading(false);
@@ -73,7 +75,7 @@ export default function Page() {
           />
       </div>
       <div>
-        <NuqsDataGridDemo PCAPassportData={data}></NuqsDataGridDemo>
+        <NuqsDataGridDemo PCAPassportData={tableData}></NuqsDataGridDemo>
       </div>
     </div>
   );
