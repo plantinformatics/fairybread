@@ -1,6 +1,6 @@
 "use client"
 
-import { Calendar, Home, Inbox, Search, Settings } from "lucide-react"
+import { Calendar, Home, Inbox, Search, Settings, SquareMousePointer, Grid2X2, ListFilter, Group, PanelRight } from "lucide-react"
 
 import {
   Sidebar,
@@ -17,8 +17,33 @@ import {
 const items = [
   {
     title: "Data Explorer",
-    url: "#",
-    icon: Home
+    url: "/data-explorer",
+    icon: Home,
+  },
+  {
+    title: "Alert Dialog",
+    url: "/alert-dialog",
+    icon: SquareMousePointer,
+  },
+  {
+    title: "Button Variants",
+    url: "/button-variants",
+    icon: Grid2X2,
+  },
+  {
+    title: "Combobox",
+    url: "/combobox",
+    icon: ListFilter,
+  },
+  {
+    title: "Input Group",
+    url: "/input-group",
+    icon: Group,
+  },
+  {
+    title: "Sheet",
+    url: "/sheet",
+    icon: PanelRight,
   },
   {
     title: "Inbox",
