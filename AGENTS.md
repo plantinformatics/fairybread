@@ -13,11 +13,20 @@ Data visualization tool for PCA analysis of crop genetic data from Genesys.
 
 - Next.js 16 (App Router)
 - TypeScript (strict mode)
-- shadcn/ui (new-york style)
+- shadcn/ui (radix-vega style)
+- Radix UI primitives (radix-ui)
+- ReUI for data grid and filter
 - TanStack Table
 - Plotly.js for PCA charts
 - nuqs for URL state management
 - Tailwind CSS 4
+
+## Data Grid & Filters
+
+- Data explorer page: `app/data-explorer/page.tsx`
+- Grid + filter UI: `components/filters/nuqs.tsx`
+- Filter field config: `config/filter-config.tsx`
+- Table column config: `config/table-config.tsx`
 
 ## Plan Mode
 

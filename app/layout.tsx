@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Inter } from "next/font/google";
 import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/app-sidebar"
+import ThemeToggle from "@/components/theme-toggle"
 import { NuqsAdapter } from 'nuqs/adapters/next/app'
 import "./globals.css";
 
@@ -34,7 +35,10 @@ export default function RootLayout({
           <SidebarProvider>
             <AppSidebar />
             <SidebarInset className="p-2">
-              <SidebarTrigger className="sticky top-2 z-50" />
+              <div className="sticky top-2 z-50 flex items-center justify-between gap-2">
+                <SidebarTrigger />
+                <ThemeToggle />
+              </div>
               {children}
             </SidebarInset>
           </SidebarProvider>
