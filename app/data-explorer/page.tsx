@@ -58,12 +58,6 @@ export default function Page() {
 
   return (
     <div className="w-full p-4">
-      <div className="mb-4 rounded-md bg-gray-100 p-4 dark:bg-gray-800">
-        <h1 className="text-xl font-bold mb-2">PCA Passport Data</h1>
-        <p className="text-sm text-gray-600 dark:text-gray-400">
-          File: {file} | GroupBy: {groupBy} | Palette: {palette}
-        </p>
-      </div>
       <div className={`w-full ${loading ? 'blur-xs' : 'blur-none'}`}>
           <Plot
             data={data}

@@ -42,20 +42,20 @@ export type PCAPassportData = {
 
 const addSortingDropdownFn = (column: Column<PCAPassportData>, accessorKey: string) => {
     return (
-        <DataGridColumnHeader column={column} title={accessorKey} />
+        <DataGridColumnHeader column={column} title={accessorKey} visibility />
     )
 }
 
 export const columns: ColumnDef<PCAPassportData>[] = [
     {
-        id: "genotypeID",
+        id: "Genotype ID",
         accessorKey: "genotypeID",
-        header: "Genotype ID",
+        header: ({column}) => addSortingDropdownFn(column,"Genotype ID"),
     },
     {
-        id: "accessionNumber",
+        id: "Accession Number",
         accessorKey: "accessionNumber",
-        header: "Accession Number",
+        header: ({column}) => addSortingDropdownFn(column,"Accession Number"),
         cell: ({ row }) => {
             // genesys uses the doi as the URL not the accession number
             return (
@@ -64,13 +64,11 @@ export const columns: ColumnDef<PCAPassportData>[] = [
                 </a>
             )
         },
-        enableColumnFilter: true
     },
     {
         id: "Accession Name",
         accessorKey: "accessionName",
         header: ({column}) => addSortingDropdownFn(column,"Accession Name"),
-        enableColumnFilter: true
     },
     {
         id: "Country of Origin",
@@ -79,7 +77,6 @@ export const columns: ColumnDef<PCAPassportData>[] = [
         accessorKey: "countryOfOrigin.name",
         // Uncommon implamentation of having accessor key and accessor function, could lead to unepxected behaviour
         sortingFn: 'text',
-        enableColumnFilter: true,
         enableGrouping: true
     },
     {
@@ -103,17 +100,17 @@ export const columns: ColumnDef<PCAPassportData>[] = [
               {getValue() as string}
             </a>
         ),
+        enableSorting: false,
     },
     {
         id: "Taxonomy",
-        header: "Taxonomy",
+        header: ({column}) => addSortingDropdownFn(column,"Taxonomy"),
         accessorFn: (row) => (row as any)["taxonomy.taxonName"],
     },
     {
         id: "Donor Name",
         header: ({column}) => addSortingDropdownFn(column,"Donor Name"),
         accessorKey: "donorName",
-        enableColumnFilter: true,
         enableGrouping: true
     },
 
