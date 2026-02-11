@@ -119,7 +119,7 @@ export default function NuqsDataGridDemo(
     //   });
     // });
     return filtered;
-  }, [filters]);
+  }, [PCAPassportData, filters]);
 
   const handleFiltersChange = useCallback(
     (newFilters: Filter[]) => {
