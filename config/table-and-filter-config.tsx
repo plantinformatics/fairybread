@@ -3,14 +3,18 @@
 import React from "react"
 import { Column, ColumnDef } from "@tanstack/react-table"
 import { DataGridColumnHeader } from "@/components/ui/data-grid-column-header"
+import type { FilterFieldConfig } from "@/components/ui/filters"
 
 import { 
-    CheckCircle,
-    CheckCircle2,
-    DollarSign,
-    MoreHorizontal,
-    Text,
-    XCircle,
+    BookOpenText,
+    Fingerprint,
+    Globe,
+    Hash,
+    Landmark,
+    Map,
+    MapPinned,
+    Tag,
+    UserRound,
 } from "lucide-react"
 
 export type PCAPassportData = {
@@ -46,11 +50,30 @@ const addSortingDropdownFn = (column: Column<PCAPassportData>, accessorKey: stri
     )
 }
 
-export const columns: ColumnDef<PCAPassportData>[] = [
+type ColumnMeta = {
+    filter?: Omit<FilterFieldConfig, "key" | "label"> & {
+        label?: string
+        include?: boolean
+    }
+}
+
+type FilterableColumnDef = ColumnDef<PCAPassportData> & {
+    accessorKey?: string
+    meta?: ColumnMeta
+}
+
+export const columns: FilterableColumnDef[] = [
     {
         id: "Genotype ID",
         accessorKey: "genotypeID",
         header: ({column}) => addSortingDropdownFn(column,"Genotype ID"),
+        meta: {
+            filter: {
+                type: "text",
+                label: "Genotype ID",
+                icon: <Fingerprint className="size-3.5" />,
+            },
+        },
     },
     {
         id: "Accession Number",
@@ -64,11 +87,25 @@ export const columns: ColumnDef<PCAPassportData>[] = [
                 </a>
             )
         },
+        meta: {
+            filter: {
+                type: "text",
+                label: "Accession Number",
+                icon: <Hash className="size-3.5" />,
+            },
+        },
     },
     {
         id: "Accession Name",
         accessorKey: "accessionName",
         header: ({column}) => addSortingDropdownFn(column,"Accession Name"),
+        meta: {
+            filter: {
+                type: "text",
+                label: "Accession Name",
+                icon: <BookOpenText className="size-3.5" />,
+            },
+        },
     },
     {
         id: "Country of Origin",
@@ -77,19 +114,40 @@ export const columns: ColumnDef<PCAPassportData>[] = [
         accessorKey: "countryOfOrigin.name",
         // Uncommon implamentation of having accessor key and accessor function, could lead to unepxected behaviour
         sortingFn: 'text',
-        enableGrouping: true
+        enableGrouping: true,
+        meta: {
+            filter: {
+                type: "text",
+                label: "Country of Origin",
+                icon: <Globe className="size-3.5" />,
+            },
+        },
     },
     {
         id: "Region",
         accessorKey: "region",
         header: ({column}) => addSortingDropdownFn(column,"Region"),
-        enableGrouping: true
+        enableGrouping: true,
+        meta: {
+            filter: {
+                type: "text",
+                label: "Region",
+                icon: <MapPinned className="size-3.5" />,
+            },
+        },
     },
     {
         id: "Sub-Region",
         accessorKey: "subRegion",
         header: ({column}) => addSortingDropdownFn(column,"Sub-Region"),
-        enableGrouping: true
+        enableGrouping: true,
+        meta: {
+            filter: {
+                type: "text",
+                label: "Sub-Region",
+                icon: <Map className="size-3.5" />,
+            },
+        },
     },
     {
         id: "DOI",
@@ -101,17 +159,39 @@ export const columns: ColumnDef<PCAPassportData>[] = [
             </a>
         ),
         enableSorting: false,
+        meta: {
+            filter: {
+                type: "text",
+                label: "DOI",
+                include: false,
+            },
+        },
     },
     {
         id: "Taxonomy",
         header: ({column}) => addSortingDropdownFn(column,"Taxonomy"),
         accessorFn: (row) => (row as any)["taxonomy.taxonName"],
+        accessorKey: "taxonomy.taxonName",
+        meta: {
+            filter: {
+                type: "text",
+                label: "Taxonomy",
+                icon: <Landmark className="size-3.5" />,
+            },
+        },
     },
     {
         id: "Donor Name",
         header: ({column}) => addSortingDropdownFn(column,"Donor Name"),
         accessorKey: "donorName",
-        enableGrouping: true
+        enableGrouping: true,
+        meta: {
+            filter: {
+                type: "text",
+                label: "Donor Name",
+                icon: <UserRound className="size-3.5" />,
+            },
+        },
     },
 
     // TODO: add alias column
@@ -124,4 +204,24 @@ export const columns: ColumnDef<PCAPassportData>[] = [
     //     )
     // }
 ]
+
+export const fields: FilterFieldConfig[] = columns
+    .filter((column) => {
+        const filter = column.meta?.filter
+        if (filter?.include === false) return false
+        return typeof column.accessorKey === "string"
+    })
+    .map((column) => {
+        const filter = column.meta?.filter
+        const key = column.accessorKey as string
+        return {
+            key,
+            label: filter?.label ?? String(column.id ?? key),
+            type: filter?.type ?? "text",
+            icon: filter?.icon,
+            placeholder: filter?.placeholder ?? `Filter ${String(column.id ?? key)}...`,
+            defaultOperator: filter?.defaultOperator ?? "contains",
+            className: filter?.className ?? "w-40",
+        } satisfies FilterFieldConfig
+    })
     
