@@ -36,7 +36,7 @@ export default function RootLayout({
             <AppSidebar />
             <SidebarInset className="p-2">
               <div className="sticky top-2 z-50 flex items-center justify-between gap-2">
-                <SidebarTrigger />
+                <SidebarTrigger className="h-8 w-8" />
                 <ThemeToggle />
               </div>
               {children}

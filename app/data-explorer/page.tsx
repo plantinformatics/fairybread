@@ -14,7 +14,7 @@ import { extractSortAndFilter, createPlotData } from "@/lib/dataProcessing";
 
 const Plot = dynamic(() => import("react-plotly.js"), {
   ssr: false,
-  loading: () => <Skeleton className="h-[420px] w-[100%] rounded-xl m-4" /> // unlikely to be used because data load is longer
+  loading: () => <Skeleton className="w-full h-[70vh] max-h-[70vh] rounded-xl" /> // unlikely to be used because data load is longer
 })
 
 export default function Page() {
@@ -28,10 +28,15 @@ export default function Page() {
   const [tableData, setTableData] = useState<any[]>([])
   const [loading, setLoading] = useState(true);
 
-  const dynamicLayout = useMemo(() => ({
-    ...chartLayout,
-    colorway: [...chartColourPalettes.get(palette) || []],
-  }), [palette]);
+  const dynamicLayout = useMemo(() => {
+    // Let Plotly autosize to the parent container height instead of fixed layout height.
+    const { height: _defaultHeight, ...baseLayout } = chartLayout;
+    return {
+      ...baseLayout,
+      autosize: true,
+      colorway: [...chartColourPalettes.get(palette) || []],
+    };
+  }, [palette]);
 
   useEffect(() => {
     async function loadData() {
@@ -46,25 +51,10 @@ export default function Page() {
     loadData();
   }, [file, groupBy]);
 
-  if (loading) {
-    return (
-      <div className="mx-auto max-w-full p-4">
-        <div className="mb-4 rounded-md bg-gray-100 p-4 dark:bg-gray-800">
-          <h1 className="text-xl font-bold mb-2">Loading PCA Passport Data...</h1>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="w-full p-4">
-      <div className="mb-4 rounded-md bg-gray-100 p-4 dark:bg-gray-800">
-        <h1 className="text-xl font-bold mb-2">PCA Passport Data</h1>
-        <p className="text-sm text-gray-600 dark:text-gray-400">
-          File: {file} | GroupBy: {groupBy} | Palette: {palette}
-        </p>
-      </div>
-      <div className={`w-full ${loading ? 'blur-xs' : 'blur-none'}`}>
+      <div className={`w-full h-[70vh] max-h-[70vh] ${loading ? 'blur-xs' : 'blur-none'}`}>
           <Plot
             data={data}
             layout={dynamicLayout}

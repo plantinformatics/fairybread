@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DataGrid, DataGridContainer } from '@/components/ui/data-grid';
 import { DataGridColumnHeader } from '@/components/ui/data-grid-column-header';
+import { DataGridColumnVisibility } from '@/components/ui/data-grid-column-visibility';
 import { DataGridPagination } from '@/components/ui/data-grid-pagination';
 import { DataGridTable } from '@/components/ui/data-grid-table';
 import { Filters, type Filter, type FilterFieldConfig } from '@/components/ui/filters';
@@ -20,11 +21,10 @@ import {
   SortingState,
   useReactTable,
 } from '@tanstack/react-table';
-import { FunnelX } from 'lucide-react';
+import { FunnelX, Settings2 } from 'lucide-react';
 import { parseAsArrayOf, parseAsString, useQueryStates } from 'nuqs';
 
-import { columns, PCAPassportData } from '@/config/table-config';
-import { fields } from '@/config/filter-config'
+import { columns, fields, PCAPassportData } from '@/config/table-and-filter-config';
 
 export default function NuqsDataGridDemo(
   {PCAPassportData}:{PCAPassportData:any}
@@ -33,7 +33,7 @@ export default function NuqsDataGridDemo(
     pageIndex: 0,
     pageSize: 25,
   });
-  const [sorting, setSorting] = useState<SortingState>([{ id: 'genotypeID', desc: false }]);
+  const [sorting, setSorting] = useState<SortingState>([{ id: 'Genotype ID', desc: false }]);
 
   const [filters, setFilters] = useState<Filter[]>([]);
   const urlDebounceRef = useRef<NodeJS.Timeout | null>(null);
@@ -45,80 +45,73 @@ export default function NuqsDataGridDemo(
     };
   }, []);
 
-  // Use nuqs for URL state management with batching
-  const [queryStates, setQueryStates] = useQueryStates(
-    {
-      name: parseAsString,
-      email: parseAsString,
-      company: parseAsArrayOf(parseAsString),
-      role: parseAsArrayOf(parseAsString),
-      status: parseAsArrayOf(parseAsString),
-      availability: parseAsArrayOf(parseAsString),
-      location: parseAsString,
-      joined: parseAsString,
-      balance: parseAsString,
-      balanceMin: parseAsString,
-      balanceMax: parseAsString,
-    },
-    {
-      history: 'push',
-    },
-  );
+  const queryStateParsers = useMemo(() => {
+    return Object.fromEntries(
+      fields
+        .map((field) => field.key)
+        .filter((key): key is string => !!key)
+        .map((key) => [key, parseAsArrayOf(parseAsString)]),
+    );
+  }, []);
+  // Query states generated from config
+  const [queryStates, setQueryStates] = useQueryStates(queryStateParsers, {
+    history: 'push',
+  });
 
   // Apply filters to data based on current filters state
   const filteredData = useMemo(() => {
     let filtered = [...PCAPassportData];
-    // const active = filters.filter((f) => (Array.isArray(f.values) ? f.values.length > 0 : !!f.values));
-    // active.forEach((filter) => {
-    //   const { field, operator, values } = filter;
-    //   filtered = filtered.filter((item) => {
-    //     const fieldValue = item[field as keyof PCAPassportData];
-    //     switch (operator) {
-    //       case 'is':
-    //         return values.includes(fieldValue);
-    //       case 'is_not':
-    //         return !values.includes(fieldValue);
-    //       case 'contains':
-    //         return values.some((value) => String(fieldValue).toLowerCase().includes(String(value).toLowerCase()));
-    //       case 'not_contains':
-    //         return !values.some((value) => String(fieldValue).toLowerCase().includes(String(value).toLowerCase()));
-    //       case 'equals':
-    //         return fieldValue === values[0];
-    //       case 'not_equals':
-    //         return fieldValue !== values[0];
-    //       case 'greater_than':
-    //         return Number(fieldValue) > Number(values[0]);
-    //       case 'less_than':
-    //         return Number(fieldValue) < Number(values[0]);
-    //       case 'greater_than_or_equal':
-    //         return Number(fieldValue) >= Number(values[0]);
-    //       case 'less_than_or_equal':
-    //         return Number(fieldValue) <= Number(values[0]);
-    //       case 'between':
-    //         if (values.length >= 2) {
-    //           const min = Number(values[0]);
-    //           const max = Number(values[1]);
-    //           return Number(fieldValue) >= min && Number(fieldValue) <= max;
-    //         }
-    //         return true;
-    //       case 'not_between':
-    //         if (values.length >= 2) {
-    //           const min = Number(values[0]);
-    //           const max = Number(values[1]);
-    //           return Number(fieldValue) < min || Number(fieldValue) > max;
-    //         }
-    //         return true;
-    //       case 'before':
-    //         return new Date(String(fieldValue)) < new Date(String(values[0]));
-    //       case 'after':
-    //         return new Date(String(fieldValue)) > new Date(String(values[0]));
-    //       default:
-    //         return true;
-    //     }
-    //   });
-    // });
+    const active = filters.filter((f) => (Array.isArray(f.values) ? f.values.length > 0 : !!f.values));
+    active.forEach((filter) => {
+      const { field, operator, values } = filter;
+      filtered = filtered.filter((item) => {
+        const fieldValue = item[field as keyof PCAPassportData];
+        switch (operator) {
+          case 'is':
+            return values.includes(fieldValue);
+          case 'is_not':
+            return !values.includes(fieldValue);
+          case 'contains':
+            return values.some((value) => String(fieldValue).toLowerCase().includes(String(value).toLowerCase()));
+          case 'not_contains':
+            return !values.some((value) => String(fieldValue).toLowerCase().includes(String(value).toLowerCase()));
+          case 'equals':
+            return fieldValue === values[0];
+          case 'not_equals':
+            return fieldValue !== values[0];
+          case 'greater_than':
+            return Number(fieldValue) > Number(values[0]);
+          case 'less_than':
+            return Number(fieldValue) < Number(values[0]);
+          case 'greater_than_or_equal':
+            return Number(fieldValue) >= Number(values[0]);
+          case 'less_than_or_equal':
+            return Number(fieldValue) <= Number(values[0]);
+          case 'between':
+            if (values.length >= 2) {
+              const min = Number(values[0]);
+              const max = Number(values[1]);
+              return Number(fieldValue) >= min && Number(fieldValue) <= max;
+            }
+            return true;
+          case 'not_between':
+            if (values.length >= 2) {
+              const min = Number(values[0]);
+              const max = Number(values[1]);
+              return Number(fieldValue) < min || Number(fieldValue) > max;
+            }
+            return true;
+          case 'before':
+            return new Date(String(fieldValue)) < new Date(String(values[0]));
+          case 'after':
+            return new Date(String(fieldValue)) > new Date(String(values[0]));
+          default:
+            return true;
+        }
+      });
+    });
     return filtered;
-  }, [filters]);
+  }, [PCAPassportData, filters]);
 
   const handleFiltersChange = useCallback(
     (newFilters: Filter[]) => {
@@ -127,18 +120,13 @@ export default function NuqsDataGridDemo(
 
       if (urlDebounceRef.current) clearTimeout(urlDebounceRef.current);
       urlDebounceRef.current = setTimeout(() => {
-        const next: Record<string, string | string[] | null> = {};
+        const next: Record<string, string[] | null> = {};
         Object.keys(queryStates).forEach((k) => {
           next[k] = null;
         });
         newFilters.forEach(({ field, values }) => {
-          if (['company', 'role', 'status', 'availability'].includes(field)) {
-            const clean = (values || []).filter((v) => v && String(v).trim() !== '') as string[];
-            next[field] = clean.length ? clean : null;
-          } else {
-            const first = values && values.length > 0 ? String(values[0]) : '';
-            next[field] = first && first.trim() !== '' ? first : null;
-          }
+          const clean = (values || []).map((v) => String(v)).filter((v) => v.trim() !== '');
+          next[field] = clean.length ? clean : null;
         });
         setQueryStates(next);
       }, 250);
@@ -183,6 +171,15 @@ export default function NuqsDataGridDemo(
         <div className="flex-1">
           <Filters filters={filters} fields={fields} onChange={handleFiltersChange} variant="outline" size="sm" />
         </div>
+        <DataGridColumnVisibility
+          table={table}
+          trigger={
+            <Button variant="outline" size="sm">
+              <Settings2 className="mr-1 h-4 w-4" />
+              Columns
+            </Button>
+          }
+        />
         {filters.length > 0 && (
           <Button variant="outline" size="sm" onClick={clearFilters}>
             <FunnelX /> Clear
@@ -196,11 +193,14 @@ export default function NuqsDataGridDemo(
         recordCount={filteredData?.length || 0}
         tableLayout={{
           columnsMovable: true,
+          headerSticky: true,
+          columnsVisibility: true,
+          columnsPinnable: true
         }}
       >
         <div className="w-full space-y-2.5">
           <DataGridContainer>
-            <ScrollArea>
+            <ScrollArea className="max-h-[80vh]">
               <DataGridTable />
               <ScrollBar orientation="horizontal" />
             </ScrollArea>

@@ -12,11 +12,7 @@ export default function DataExplorerLayout({
   return (
     <Suspense
       fallback={
-        <div className="mx-auto max-w-full p-4">
-          <div className="mb-4 rounded-md bg-gray-100 p-4 dark:bg-gray-800">
-            <h1 className="text-xl font-bold mb-2">Loading...</h1>
-          </div>
-        </div>
+        null
       }
     >
       {children}
