@@ -47,6 +47,67 @@ export const chartLayout = {
     },
 };
 
+const chartThemeStyles = {
+  dark: {
+    axisColor: "#e5e7eb",
+    gridColor: "#374151",
+    zeroLineColor: "#6b7280",
+    legendBgColor: "rgba(17,24,39,0.85)",
+    legendBorderColor: "#4b5563",
+    modebarBgColor: "rgba(17,24,39,0.8)",
+    modebarActiveColor: "#93c5fd",
+  },
+  light: {
+    axisColor: "#111827",
+    gridColor: "#e5e7eb",
+    zeroLineColor: "#9ca3af",
+    legendBgColor: "rgba(255,255,255,0.8)",
+    legendBorderColor: "#e5e7eb",
+    modebarBgColor: "rgba(255,255,255,0.8)",
+    modebarActiveColor: "#2563eb",
+  },
+} as const;
+
+export function buildChartLayout(isDarkMode: boolean, palette: string) {
+  const { height: _defaultHeight, ...baseLayout } = chartLayout;
+  const theme = isDarkMode ? chartThemeStyles.dark : chartThemeStyles.light;
+
+  return {
+    ...baseLayout,
+    autosize: true,
+    colorway: [...chartColourPalettes.get(palette) || []],
+    plot_bgcolor: "rgba(0,0,0,0)",
+    paper_bgcolor: "rgba(0,0,0,0)",
+    font: {
+      ...(baseLayout.font ?? {}),
+      color: theme.axisColor,
+    },
+    xaxis: {
+      ...baseLayout.xaxis,
+      color: theme.axisColor,
+      gridcolor: theme.gridColor,
+      zerolinecolor: theme.zeroLineColor,
+    },
+    yaxis: {
+      ...baseLayout.yaxis,
+      color: theme.axisColor,
+      gridcolor: theme.gridColor,
+      zerolinecolor: theme.zeroLineColor,
+    },
+    legend: {
+      ...baseLayout.legend,
+      bgcolor: theme.legendBgColor,
+      bordercolor: theme.legendBorderColor,
+    },
+    modebar: {
+      ...baseLayout.modebar,
+      color: theme.axisColor,
+      bgcolor: theme.modebarBgColor,
+      activecolor: theme.modebarActiveColor,
+    },
+  };
+}
+
 // Config for the chart
 export const chartConfig = {
     displayModeBar: true,

@@ -51,8 +51,15 @@ async function AppFrameWithCookie({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const cookieStore = await cookies()
-  const defaultOpen = cookieStore.get("sidebar_state")?.value !== "false"
+  let defaultOpen = true;
+
+  try {
+    const cookieStore = await cookies();
+    defaultOpen = cookieStore.get("sidebar_state")?.value !== "false";
+  } catch (error) {
+    // Root layout must stay renderable; fall back if cookie access fails.
+    console.error("Failed to read sidebar_state cookie in root layout", error);
+  }
 
   return <AppFrame defaultOpen={defaultOpen}>{children}</AppFrame>
 }

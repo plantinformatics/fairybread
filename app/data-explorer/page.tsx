@@ -8,7 +8,7 @@ import NuqsDataGridDemo from '@/components/filters/nuqs';
 
 import { Skeleton } from "@/components/ui/skeleton";
 
-import { chartConfig, chartLayout, chartColourPalettes } from "@/config/chart-config";
+import { chartConfig, buildChartLayout } from "@/config/chart-config";
 
 import { extractSortAndFilter, createPlotData } from "@/lib/dataProcessing";
 
@@ -27,16 +27,25 @@ export default function Page() {
   const [data, setData] = useState<any[]>([]);
   const [tableData, setTableData] = useState<any[]>([])
   const [loading, setLoading] = useState(true);
+  const [isDarkMode, setIsDarkMode] = useState(false);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    const syncTheme = () => {
+      setIsDarkMode(root.classList.contains('dark'));
+    };
+
+    syncTheme();
+
+    const observer = new MutationObserver(syncTheme);
+    observer.observe(root, { attributes: true, attributeFilter: ['class'] });
+
+    return () => observer.disconnect();
+  }, []);
 
   const dynamicLayout = useMemo(() => {
-    // Let Plotly autosize to the parent container height instead of fixed layout height.
-    const { height: _defaultHeight, ...baseLayout } = chartLayout;
-    return {
-      ...baseLayout,
-      autosize: true,
-      colorway: [...chartColourPalettes.get(palette) || []],
-    };
-  }, [palette]);
+    return buildChartLayout(isDarkMode, palette);
+  }, [palette, isDarkMode]);
 
   useEffect(() => {
     async function loadData() {
