@@ -2,7 +2,7 @@
 
 import { cache } from 'react';
 import { unstable_cache } from 'next/cache';
-import { PCAFileLocation } from '@/config/pca-location-config';
+import { PCAFileInfo } from '@/config/pca-location-config';
 import chalk from 'chalk';
 import { parse } from "csv-parse/sync";
 import path from 'path';
@@ -36,12 +36,12 @@ export const fetchPCAPassportData = cache(async (PCAFile: string) => {
     // Fetch PCA data
     console.log(debug('Fetching PCA passport data for:'), PCAFile);
     
-    const PCAFileURL = PCAFileLocation.get(PCAFile);
-    if (!PCAFileURL) {
+    const fileInfo = PCAFileInfo.get(PCAFile);
+    if (!fileInfo) {
       throw new Error('Invalid PCA file');
     }
 
-    const PCAData = await fetchAndParsePCAFile(PCAFileURL);
+    const PCAData = await fetchAndParsePCAFile(fileInfo.fileUrl);
 
     // Get genotype IDs
     const genotypeIds = PCAData.map((p: any) => p.IID);
