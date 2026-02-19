@@ -1,6 +1,6 @@
 {
   "$schema": "https://ui.shadcn.com/schema.json",
-  "style": "radix-vega",
+  "style": "base-vega",
   "rsc": true,
   "tsx": true,
   "tailwind": {
@@ -21,6 +21,6 @@
     "hooks": "@/hooks"
   },
   "registries": {
-    "@reui": "https://reui.io/r/{name}.json"
+    "@reui": "https://reui.io/r/{style}/{name}.json"
   }
 }

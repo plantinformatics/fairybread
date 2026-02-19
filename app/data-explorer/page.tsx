@@ -62,8 +62,8 @@ export default function Page() {
 
 
   return (
-    <div className="w-full p-4">
-      <div className={`w-full h-[70vh] max-h-[70vh] ${loading ? 'blur-xs' : 'blur-none'}`}>
+    <div className="w-full">
+      <div className={`w-full h-[60vh] max-h-[70vh] ${loading ? 'blur-xs' : 'blur-none'}`}>
           <Plot
             data={data}
             layout={dynamicLayout}
