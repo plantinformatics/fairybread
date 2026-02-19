@@ -1,7 +1,6 @@
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { Slot as SlotPrimitive } from 'radix-ui';
 
 export interface BadgeProps extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof badgeVariants> {
   asChild?: boolean;
@@ -10,7 +9,7 @@ export interface BadgeProps extends React.HTMLAttributes<HTMLDivElement>, Varian
 }
 
 export interface BadgeButtonProps
-  extends React.ButtonHTMLAttributes<HTMLDivElement>,
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof badgeButtonVariants> {
   asChild?: boolean;
 }
@@ -187,16 +186,24 @@ function Badge({
   shape,
   asChild = false,
   disabled,
+  children,
   ...props
 }: React.ComponentProps<'span'> & VariantProps<typeof badgeVariants> & { asChild?: boolean }) {
-  const Comp = asChild ? SlotPrimitive.Slot : 'span';
+  if (asChild && React.isValidElement<{ className?: string }>(children)) {
+    return React.cloneElement(children, {
+      ...props,
+      'data-slot': 'badge',
+      className: cn(badgeVariants({ variant, size, appearance, shape, disabled }), className, children.props.className),
+    } as React.HTMLAttributes<HTMLElement>);
+  }
 
   return (
-    <Comp
+    <span
       data-slot="badge"
       className={cn(badgeVariants({ variant, size, appearance, shape, disabled }), className)}
-      {...props}
-    />
+      {...props}>
+      {children}
+    </span>
   );
 }
 
@@ -204,16 +211,24 @@ function BadgeButton({
   className,
   variant,
   asChild = false,
+  children,
   ...props
 }: React.ComponentProps<'button'> & VariantProps<typeof badgeButtonVariants> & { asChild?: boolean }) {
-  const Comp = asChild ? SlotPrimitive.Slot : 'span';
+  if (asChild && React.isValidElement<{ className?: string }>(children)) {
+    return React.cloneElement(children, {
+      ...props,
+      'data-slot': 'badge-button',
+      className: cn(badgeButtonVariants({ variant, className }), children.props.className),
+    } as React.HTMLAttributes<HTMLElement>);
+  }
+
   return (
-    <Comp
+    <button
       data-slot="badge-button"
       className={cn(badgeButtonVariants({ variant, className }))}
-      role="button"
-      {...props}
-    />
+      {...props}>
+      {children}
+    </button>
   );
 }
 
