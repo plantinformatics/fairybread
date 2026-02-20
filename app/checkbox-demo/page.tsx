@@ -11,13 +11,13 @@ import {
 } from "@tanstack/react-table";
 
 import { Checkbox } from "@/components/ui/checkbox";
-import { DataGrid, DataGridContainer } from "@/components/ui/data-grid";
-import { DataGridPagination } from "@/components/ui/data-grid-pagination";
+import { DataGrid, DataGridContainer } from "@/components/reui/data-grid/data-grid";
+import { DataGridPagination } from "@/components/reui/data-grid/data-grid-pagination";
 import {
   DataGridTable,
   DataGridTableRowSelect,
   DataGridTableRowSelectAll,
-} from "@/components/ui/data-grid-table";
+} from "@/components/reui/data-grid/data-grid-table";
 
 type DemoRow = {
   id: string;
@@ -58,8 +58,7 @@ const columns: ColumnDef<DemoRow>[] = [
 ];
 
 export default function CheckboxDemoPage() {
-  const [checked, setChecked] = React.useState(true);
-  const [indeterminate, setIndeterminate] = React.useState(true);
+  const [checked, setChecked] = React.useState(false);
   const [pagination, setPagination] = React.useState<PaginationState>({
     pageIndex: 0,
     pageSize: 5,
@@ -86,7 +85,7 @@ export default function CheckboxDemoPage() {
       <header className="space-y-2">
         <h1 className="text-2xl font-semibold">Checkbox Demo</h1>
         <p className="text-sm text-muted-foreground">
-          Visual check for checked and indeterminate states, plus DataGrid row selection.
+          Visual reference for checkbox states and DataGrid row selection.
         </p>
       </header>
 
@@ -95,18 +94,23 @@ export default function CheckboxDemoPage() {
         <div className="flex flex-wrap items-center gap-6">
           <label className="inline-flex items-center gap-2 text-sm">
             <Checkbox checked={checked} onCheckedChange={(value) => setChecked(Boolean(value))} />
+            Controlled ({checked ? "checked" : "unchecked"})
+          </label>
+          <label className="inline-flex items-center gap-2 text-sm">
+            <Checkbox checked={false} />
+            Unchecked
+          </label>
+          <label className="inline-flex items-center gap-2 text-sm">
+            <Checkbox checked />
             Checked
           </label>
           <label className="inline-flex items-center gap-2 text-sm">
-            <Checkbox
-              checked={indeterminate}
-              indeterminate={indeterminate}
-              onCheckedChange={(value) => {
-                const next = Boolean(value);
-                setIndeterminate(next);
-              }}
-            />
+            <Checkbox indeterminate checked={false} />
             Indeterminate
+          </label>
+          <label className="inline-flex items-center gap-2 text-sm text-muted-foreground">
+            <Checkbox checked disabled />
+            Disabled
           </label>
         </div>
       </section>

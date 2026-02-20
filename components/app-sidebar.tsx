@@ -1,6 +1,6 @@
 "use client"
 
-import { Calendar, Home, Inbox, Search, Settings, SquareMousePointer, Grid2X2, ListFilter, Group, PanelRight, GalleryVerticalEnd, CheckSquare } from "lucide-react"
+import { Calendar, Home, Inbox, Search, Settings, Grid2X2, Group, PanelRight, GalleryVerticalEnd, CheckSquare } from "lucide-react"
 
 import {
   Sidebar,
@@ -21,19 +21,9 @@ const items = [
     icon: Home,
   },
   {
-    title: "Alert Dialog",
-    url: "/alert-dialog",
-    icon: SquareMousePointer,
-  },
-  {
     title: "Button Variants",
     url: "/button-variants",
     icon: Grid2X2,
-  },
-  {
-    title: "Combobox",
-    url: "/combobox",
-    icon: ListFilter,
   },
   {
     title: "Input Group",
@@ -96,11 +86,9 @@ export function AppSidebar() {
                       <span>{item.title}</span>
                     </SidebarMenuButton>
                   ) : (
-                    <SidebarMenuButton asChild>
-                      <a href={item.url}>
-                        <item.icon />
-                        <span>{item.title}</span>
-                      </a>
+                    <SidebarMenuButton render={<a href={item.url} />}>
+                      <item.icon />
+                      <span>{item.title}</span>
                     </SidebarMenuButton>
                   )}
                 </SidebarMenuItem>

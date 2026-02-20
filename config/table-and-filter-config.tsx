@@ -2,8 +2,8 @@
 
 import React from "react"
 import { Column, ColumnDef } from "@tanstack/react-table"
-import { DataGridColumnHeader } from "@/components/ui/data-grid-column-header"
-import type { FilterFieldConfig } from "@/components/ui/filters"
+import { DataGridColumnHeader } from "@/components/reui/data-grid/data-grid-column-header"
+import type { FilterFieldConfig } from "@/components/reui/filters"
 
 import { 
     BookOpenText,

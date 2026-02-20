@@ -120,28 +120,31 @@ export const fetchPCAPassportData = cache(async (PCAFile: string) => {
     const missingPassportDataIds = genotypeIds.filter((id: string) => !passportDataGenotypeIds.has(id));
 
     // Output log file when missing passport data is more than 20
-    if (missingPassportDataIds.length > 20) {
-      console.log(chalk.yellow(`⚠ Samples without passport data: ${missingPassportDataIds.length} out of ${totalSamples}`));
-      const logFolder = path.join(process.cwd(), 'src/app/data/logs')
-      const logFilePath = path.join(logFolder, `missing-passport-data-${PCAFile}.txt`);
-      console.log(chalk.yellow('Missing IDs exceed 20, logging to file' + logFilePath));
-      const logContent = `Missing passport data: ${missingPassportDataIds.length} out of ${totalSamples}\nMissing IDs: \n${missingPassportDataIds.join('\n')}`;
-      // check if folder and file exists, if not create them
-      if (!fs.existsSync(logFolder)) {
-        fs.mkdirSync(logFolder, { recursive: true });
-        console.log(chalk.yellow('Created log folder: ' + logFolder));
-      }
-      if (!fs.existsSync(logFilePath)) {
-        fs.writeFileSync(logFilePath, logContent);
-        console.log(chalk.yellow('Created log file: ' + logFilePath));
-      }
-    } else if (missingPassportDataIds.length > 0 && missingPassportDataIds.length <= 20) {
-      // Output to console if missing passport data is less than 20
-      console.log(chalk.yellow(`⚠ Samples without passport data: ${missingPassportDataIds.length} out of ${totalSamples}`));
-      console.log(chalk.yellow('Missing IDs:'), missingPassportDataIds);
-    } else {
-      console.log(chalk.green(`✓ All ${totalSamples} samples have passport data`));
-    }
+
+    // commented out due to vercel deployment change
+
+    // if (missingPassportDataIds.length > 20) {
+    //   console.log(chalk.yellow(`⚠ Samples without passport data: ${missingPassportDataIds.length} out of ${totalSamples}`));
+    //   const logFolder = path.join(process.cwd(), 'src/app/data/logs')
+    //   const logFilePath = path.join(logFolder, `missing-passport-data-${PCAFile}.txt`);
+    //   console.log(chalk.yellow('Missing IDs exceed 20, logging to file' + logFilePath));
+    //   const logContent = `Missing passport data: ${missingPassportDataIds.length} out of ${totalSamples}\nMissing IDs: \n${missingPassportDataIds.join('\n')}`;
+    //   // check if folder and file exists, if not create them
+    //   if (!fs.existsSync(logFolder)) {
+    //     fs.mkdirSync(logFolder, { recursive: true });
+    //     console.log(chalk.yellow('Created log folder: ' + logFolder));
+    //   }
+    //   if (!fs.existsSync(logFilePath)) {
+    //     fs.writeFileSync(logFilePath, logContent);
+    //     console.log(chalk.yellow('Created log file: ' + logFilePath));
+    //   }
+    // } else if (missingPassportDataIds.length > 0 && missingPassportDataIds.length <= 20) {
+    //   // Output to console if missing passport data is less than 20
+    //   console.log(chalk.yellow(`⚠ Samples without passport data: ${missingPassportDataIds.length} out of ${totalSamples}`));
+    //   console.log(chalk.yellow('Missing IDs:'), missingPassportDataIds);
+    // } else {
+    //   console.log(chalk.green(`✓ All ${totalSamples} samples have passport data`));
+    // }
     
     // Merge PCA and passport data
     const pcaByIID = new Map(PCAData.map((p: any) => [p.IID, p]));

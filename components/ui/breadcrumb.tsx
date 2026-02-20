@@ -1,4 +1,6 @@
 import * as React from "react"
+import { mergeProps } from "@base-ui/react/merge-props"
+import { useRender } from "@base-ui/react/use-render"
 
 import { cn } from "@/lib/utils"
 import { ChevronRightIcon, MoreHorizontalIcon } from "lucide-react"
@@ -38,29 +40,23 @@ function BreadcrumbItem({ className, ...props }: React.ComponentProps<"li">) {
 }
 
 function BreadcrumbLink({
-  asChild,
   className,
-  children,
+  render,
   ...props
-}: React.ComponentProps<"a"> & {
-  asChild?: boolean
-}) {
-  if (asChild && React.isValidElement<{ className?: string }>(children)) {
-    return React.cloneElement(children, {
-      ...props,
-      "data-slot": "breadcrumb-link",
-      className: cn("hover:text-foreground transition-colors", className, children.props.className),
-    } as React.HTMLAttributes<HTMLElement>)
-  }
-
-  return (
-    <a
-      data-slot="breadcrumb-link"
-      className={cn("hover:text-foreground transition-colors", className)}
-      {...props}>
-      {children}
-    </a>
-  )
+}: useRender.ComponentProps<"a">) {
+  return useRender({
+    defaultTagName: "a",
+    props: mergeProps<"a">(
+      {
+        className: cn("hover:text-foreground transition-colors", className),
+      },
+      props
+    ),
+    render,
+    state: {
+      slot: "breadcrumb-link",
+    },
+  })
 }
 
 function BreadcrumbPage({ className, ...props }: React.ComponentProps<"span">) {

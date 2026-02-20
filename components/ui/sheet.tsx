@@ -11,52 +11,19 @@ function Sheet({ ...props }: SheetPrimitive.Root.Props) {
   return <SheetPrimitive.Root data-slot="sheet" {...props} />
 }
 
-function SheetTrigger({
-  asChild = false,
-  children,
-  ...props
-}: SheetPrimitive.Trigger.Props & {
-  asChild?: boolean
-}) {
-  if (asChild && React.isValidElement(children)) {
-    return <SheetPrimitive.Trigger data-slot="sheet-trigger" render={children} {...props} />
-  }
-
-  return (
-    <SheetPrimitive.Trigger data-slot="sheet-trigger" {...props}>
-      {children}
-    </SheetPrimitive.Trigger>
-  )
+function SheetTrigger({ ...props }: SheetPrimitive.Trigger.Props) {
+  return <SheetPrimitive.Trigger data-slot="sheet-trigger" {...props} />
 }
 
-function SheetClose({
-  asChild = false,
-  children,
-  ...props
-}: SheetPrimitive.Close.Props & {
-  asChild?: boolean
-}) {
-  if (asChild && React.isValidElement(children)) {
-    return <SheetPrimitive.Close data-slot="sheet-close" render={children} {...props} />
-  }
-
-  return (
-    <SheetPrimitive.Close data-slot="sheet-close" {...props}>
-      {children}
-    </SheetPrimitive.Close>
-  )
+function SheetClose({ ...props }: SheetPrimitive.Close.Props) {
+  return <SheetPrimitive.Close data-slot="sheet-close" {...props} />
 }
 
-function SheetPortal({
-  ...props
-}: SheetPrimitive.Portal.Props) {
+function SheetPortal({ ...props }: SheetPrimitive.Portal.Props) {
   return <SheetPrimitive.Portal data-slot="sheet-portal" {...props} />
 }
 
-function SheetOverlay({
-  className,
-  ...props
-}: SheetPrimitive.Backdrop.Props) {
+function SheetOverlay({ className, ...props }: SheetPrimitive.Backdrop.Props) {
   return (
     <SheetPrimitive.Backdrop
       data-slot="sheet-overlay"
@@ -89,9 +56,16 @@ function SheetContent({
         {showCloseButton && (
           <SheetPrimitive.Close
             data-slot="sheet-close"
-            render={<Button variant="ghost" className="absolute top-4 right-4" size="icon" />}
+            render={
+              <Button
+                variant="ghost"
+                className="absolute top-4 right-4"
+                size="icon-sm"
+              />
+            }
           >
-            <XIcon />
+            <XIcon
+            />
             <span className="sr-only">Close</span>
           </SheetPrimitive.Close>
         )}
@@ -120,10 +94,7 @@ function SheetFooter({ className, ...props }: React.ComponentProps<"div">) {
   )
 }
 
-function SheetTitle({
-  className,
-  ...props
-}: SheetPrimitive.Title.Props) {
+function SheetTitle({ className, ...props }: SheetPrimitive.Title.Props) {
   return (
     <SheetPrimitive.Title
       data-slot="sheet-title"
