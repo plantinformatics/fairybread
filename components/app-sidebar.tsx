@@ -1,6 +1,6 @@
 "use client"
 
-import { Calendar, Home, Inbox, Search, Settings, SquareMousePointer, Grid2X2, ListFilter, Group, PanelRight, GalleryVerticalEnd } from "lucide-react"
+import { Calendar, Home, Inbox, Search, Settings, SquareMousePointer, Grid2X2, ListFilter, Group, PanelRight, GalleryVerticalEnd, CheckSquare } from "lucide-react"
 
 import {
   Sidebar,
@@ -49,6 +49,11 @@ const items = [
     title: "Skeleton Variants",
     url: "/skeleton-variants",
     icon: GalleryVerticalEnd,
+  },
+  {
+    title: "Checkbox Demo",
+    url: "/checkbox-demo",
+    icon: CheckSquare,
   },
   {
     title: "Inbox",
