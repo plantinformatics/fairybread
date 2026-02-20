@@ -1,15 +1,13 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { DataGrid, DataGridContainer } from '@/components/ui/data-grid';
-import { DataGridColumnHeader } from '@/components/ui/data-grid-column-header';
-import { DataGridColumnVisibility } from '@/components/ui/data-grid-column-visibility';
-import { DataGridPagination } from '@/components/ui/data-grid-pagination';
-import { DataGridTable } from '@/components/ui/data-grid-table';
-import { Filters, type Filter, type FilterFieldConfig } from '@/components/ui/filters';
+import { DataGrid, DataGridContainer } from '@/components/reui/data-grid/data-grid';
+import { DataGridColumnHeader } from '@/components/reui/data-grid/data-grid-column-header';
+import { DataGridColumnVisibility } from '@/components/reui/data-grid/data-grid-column-visibility';
+import { DataGridPagination } from '@/components/reui/data-grid/data-grid-pagination';
+import { DataGridTable } from '@/components/reui/data-grid/data-grid-table';
+import { Filters, type Filter, type FilterFieldConfig } from '@/components/reui/filters';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import {
   ColumnDef,
@@ -169,7 +167,12 @@ export default function NuqsDataGridDemo(
       {/* Filters Section */}
       <div className="flex items-start gap-2.5 mb-5">
         <div className="flex-1">
-          <Filters filters={filters} fields={fields} onChange={handleFiltersChange} variant="outline" size="sm" />
+          <Filters
+            filters={filters}
+            fields={fields}
+            onChange={handleFiltersChange}
+            size="sm"
+          />
         </div>
         <DataGridColumnVisibility
           table={table}
@@ -198,7 +201,7 @@ export default function NuqsDataGridDemo(
           columnsPinnable: true
         }}
       >
-        <div className="w-full space-y-2.5">
+        <div className="space-y-2.5">
           <DataGridContainer>
             <ScrollArea className="max-h-[80vh]">
               <DataGridTable />

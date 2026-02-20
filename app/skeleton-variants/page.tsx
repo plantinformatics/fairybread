@@ -15,7 +15,7 @@ export default function SkeletonVariantsPage() {
       <header className="space-y-2">
         <h1 className="text-2xl font-semibold">Skeleton Variants</h1>
         <p className="text-sm text-muted-foreground">
-          Visual reference for common skeleton loading states.
+          Visual reference for updated skeleton loading patterns.
         </p>
       </header>
 

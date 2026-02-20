@@ -7,15 +7,14 @@ Data visualization tool for PCA analysis of crop genetic data from Genesys.
 - **Package Manager**: Bun
 - **Dev Command**: `bun run dev` (uses Next.js Turbopack)
 - **Build**: `bun run build`
-- **Path Aliases**: `@/*` → `./src/*`
+- **Path Aliases**: `@/*` → `./*`, `./src/*`
 
 ## Project Stack
 
 - Next.js 16 (App Router)
 - TypeScript (strict mode)
-- shadcn/ui (radix-vega style)
-- Radix UI primitives (radix-ui)
-- ReUI for data grid and filter
+- shadcn/ui + Base UI primitives (`@base-ui/react`)
+- ReUI for data grid + filters
 - TanStack Table
 - Plotly.js for PCA charts
 - nuqs for URL state management
@@ -25,8 +24,7 @@ Data visualization tool for PCA analysis of crop genetic data from Genesys.
 
 - Data explorer page: `app/data-explorer/page.tsx`
 - Grid + filter UI: `components/filters/nuqs.tsx`
-- Filter field config: `config/filter-config.tsx`
-- Table column config: `config/table-config.tsx`
+- Combined table/filter config: `config/table-and-filter-config.tsx`
 
 ## Plan Mode
 

@@ -15,7 +15,7 @@ export default function InputGroupPage() {
       <header className="space-y-2">
         <h1 className="text-2xl font-semibold">Input Group</h1>
         <p className="text-sm text-muted-foreground">
-          Reference page for input-group components and slots.
+          Visual reference for updated input group alignments and controls.
         </p>
       </header>
 
@@ -59,6 +59,19 @@ export default function InputGroupPage() {
             <InputGroupText>Notes</InputGroupText>
           </InputGroupAddon>
           <InputGroupTextarea placeholder="Add notes about this accession..." />
+        </InputGroup>
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="text-lg font-medium">Block End Addon</h2>
+        <InputGroup className="max-w-lg">
+          <InputGroupTextarea placeholder="Leave a comment..." />
+          <InputGroupAddon align="block-end" className="border-t">
+            <InputGroupButton size="xs">Save draft</InputGroupButton>
+            <InputGroupButton size="xs" variant="secondary">
+              Submit
+            </InputGroupButton>
+          </InputGroupAddon>
         </InputGroup>
       </section>
     </div>
