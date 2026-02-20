@@ -198,7 +198,7 @@ export default function NuqsDataGridDemo(
           columnsPinnable: true
         }}
       >
-        <div className="w-full space-y-2.5">
+        <div className="space-y-2.5">
           <DataGridContainer>
             <ScrollArea className="max-h-[80vh]">
               <DataGridTable />

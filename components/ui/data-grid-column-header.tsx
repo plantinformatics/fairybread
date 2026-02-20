@@ -6,6 +6,7 @@ import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuPortal,
@@ -150,7 +151,11 @@ function DataGridColumnHeader<TData, TValue>({
         <DropdownMenu>
           <DropdownMenuTrigger asChild>{headerButton()}</DropdownMenuTrigger>
           <DropdownMenuContent className="w-40" align="start">
-            {filter && <DropdownMenuLabel>{filter}</DropdownMenuLabel>}
+            {filter && (
+              <DropdownMenuGroup>
+                <DropdownMenuLabel>{filter}</DropdownMenuLabel>
+              </DropdownMenuGroup>
+            )}
 
             {filter && (column.getCanSort() || column.getCanPin() || visibility) && <DropdownMenuSeparator />}
 
