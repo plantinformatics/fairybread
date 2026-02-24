@@ -49,7 +49,7 @@ export default function BreadCrumbNav() {
               {cropOptions.map((crop) => (
                 <DropdownMenuItem
                   key={crop}
-                  onSelect={() => {
+                  onClick={() => {
                     void setSelectedCrop(crop);
                   }}
                 >
