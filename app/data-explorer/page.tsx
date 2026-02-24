@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic"
 import { useQueryStates, parseAsString } from 'nuqs';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import { fetchPCAPassportData } from '@/lib/fetchPCAPassportData';
 import NuqsDataGridDemo from '@/components/filters/nuqs';
 
@@ -28,6 +28,11 @@ export default function Page() {
   const [tableData, setTableData] = useState<any[]>([])
   const [loading, setLoading] = useState(true);
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [chartSelection, setChartSelection] = useState<any>({
+    IID: []
+  });
+  const graphDivRef = useRef<any>(null);
+  const isSelectionBoundRef = useRef<boolean>(false);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -60,6 +65,30 @@ export default function Page() {
     loadData();
   }, [file, groupBy]);
 
+  const handleSelected = useCallback((eventData: any) => {
+    if (eventData?.points?.length > 0) {
+      console.log('Selected points:', eventData);
+      setChartSelection((prev: any) => ({ ...prev, IID: eventData.points.map((point: any) => point.text) }));
+    } else {
+      setChartSelection((prev: any) => ({ ...prev, IID: [] }));
+      console.log('No points selected');
+    }
+  }, []);
+
+  function bindSelectionIfNeeded(graphDiv: any) {
+    if (!graphDiv || typeof graphDiv.on !== 'function') return;
+    if (isSelectionBoundRef.current) return;
+    graphDiv.on('plotly_selected', handleSelected);
+    isSelectionBoundRef.current = true;
+  }
+
+  // Ensures that the graph div is bound to the chart
+  const ensureGraphDivisBound = (figure: any, graphDiv: any) => {
+    graphDivRef.current = graphDiv;
+    isSelectionBoundRef.current = false;
+    bindSelectionIfNeeded(graphDiv);
+  }
+
 
   return (
     <div className="w-full pl-10">
@@ -70,7 +99,7 @@ export default function Page() {
             config={chartConfig}
             useResizeHandler={true}
             style={{ width: "100%", height: "100%" }}
-            // onInitialized={ensureGraphDivisBound}
+            onInitialized={ensureGraphDivisBound}
           />
       </div>
       <div>
