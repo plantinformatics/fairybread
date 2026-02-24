@@ -1,30 +1,11 @@
-# Fairybread Archive
+# AGENTS.md
 
-Data visualization tool for PCA analysis of crop genetic data from Genesys.
+The role of this file is to describe common mistakes and confusion points that agents might encounter as they work in this project. If you ever encounter something in the project that surprises you please alert the developer working with you and indicate that this is the case in the AGENTS.md file to help prevent future agents from having the same issue.
 
-## Essentials
+## Active considrations
 
-- **Package Manager**: Bun
-- **Dev Command**: `bun run dev` (uses Next.js Turbopack)
-- **Build**: `bun run build`
-- **Path Aliases**: `@/*` → `./*`, `./src/*`
-
-## Project Stack
-
-- Next.js 16 (App Router)
-- TypeScript (strict mode)
-- shadcn/ui + Base UI primitives (`@base-ui/react`)
-- ReUI for data grid + filters
-- TanStack Table
-- Plotly.js for PCA charts
-- nuqs for URL state management
-- Tailwind CSS 4
-
-## Data Grid & Filters
-
-- Data explorer page: `app/data-explorer/page.tsx`
-- Grid + filter UI: `components/filters/nuqs.tsx`
-- Combined table/filter config: `config/table-and-filter-config.tsx`
+- This app has no users and no real data yet. Make what ever changes you want and don't worry about it. We will figure it out when we ship. Change data schemas if it asists in future development or clarity.
+- Do not ask to run bun dev, it is already running.
 
 ## Plan Mode
 

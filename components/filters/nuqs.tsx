@@ -19,7 +19,7 @@ import {
   SortingState,
   useReactTable,
 } from '@tanstack/react-table';
-import { FunnelX, Settings2 } from 'lucide-react';
+import { FunnelX, Settings2, ListFilterIcon } from 'lucide-react';
 import { parseAsArrayOf, parseAsString, useQueryStates } from 'nuqs';
 
 import { columns, fields, PCAPassportData } from '@/config/table-and-filter-config';
@@ -171,7 +171,14 @@ export default function NuqsDataGridDemo(
             filters={filters}
             fields={fields}
             onChange={handleFiltersChange}
+            showSearchInput={true}
             size="sm"
+            trigger={
+              <Button variant="outline" size="sm">
+                <ListFilterIcon className="mr-1 h-4 w-4" />
+                Add Filter
+              </Button>
+            }
           />
         </div>
         <DataGridColumnVisibility
@@ -203,7 +210,7 @@ export default function NuqsDataGridDemo(
       >
         <div className="space-y-2.5">
           <DataGridContainer>
-            <ScrollArea className="max-h-[80vh]">
+            <ScrollArea className="h-[80vh]">
               <DataGridTable />
               <ScrollBar orientation="horizontal" />
             </ScrollArea>
