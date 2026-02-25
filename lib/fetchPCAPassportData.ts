@@ -3,6 +3,7 @@
 import { cache } from 'react';
 import { unstable_cache } from 'next/cache';
 import { PCAFileInfo } from '@/config/pca-location-config';
+import { passportDataSelectFields } from '@/config/passport-data-config';
 import chalk from 'chalk';
 import { parse } from "csv-parse/sync";
 import path from 'path';
@@ -50,6 +51,7 @@ export const fetchPCAPassportData = cache(async (PCAFile: string) => {
     const cacheTimeoutSeconds = 3600; // Cache timeout: 1 hour (3600 seconds)
     const totalSamples = genotypeIds.length;
     const totalPages = Math.ceil(totalSamples / maxPassportDataLength);
+    const selectFields = passportDataSelectFields.join(',');
     
     console.log(debug(`Total samples requested: ${totalSamples}`));
     console.log(debug(`Total pages to fetch: ${totalPages}`));
@@ -65,8 +67,13 @@ export const fetchPCAPassportData = cache(async (PCAFile: string) => {
       // Wrap fetch in unstable_cache for proper POST request caching
       const fetchPageData = unstable_cache(
         async (pageNum: number, ids: string[]) => {
+          const queryParams = new URLSearchParams({
+            select: selectFields,
+            l: String(maxPassportDataLength),
+            p: String(pageNum),
+          });
           const response = await fetch(
-            `https://genolink.plantinformatics.io/api/genesys/accession/query?select=region,subRegion,countryOfOrigin.name,doi,accessionName,taxonomy.taxonName,donorName&l=${maxPassportDataLength}&p=${pageNum}`,
+            `https://genolink.plantinformatics.io/api/genesys/accession/query?${queryParams.toString()}`,
             {
               method: 'POST',
               headers: {
