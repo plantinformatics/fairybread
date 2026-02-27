@@ -24,8 +24,9 @@ import { parseAsArrayOf, parseAsString, useQueryStates } from 'nuqs';
 
 import { columns, fields, PCAPassportData } from '@/config/table-and-filter-config';
 
-export default function NuqsDataGridDemo(
-  {PCAPassportData}:{PCAPassportData:any}
+export function PcaTable(
+  {rawData, chartSelection}:
+  {rawData:any, chartSelection:any}
 ) {
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
@@ -58,7 +59,7 @@ export default function NuqsDataGridDemo(
 
   // Apply filters to data based on current filters state
   const filteredData = useMemo(() => {
-    let filtered = [...PCAPassportData];
+    let filtered = [...rawData];
     const active = filters.filter((f) => (Array.isArray(f.values) ? f.values.length > 0 : !!f.values));
     active.forEach((filter) => {
       const { field, operator, values } = filter;
@@ -109,7 +110,7 @@ export default function NuqsDataGridDemo(
       });
     });
     return filtered;
-  }, [PCAPassportData, filters]);
+  }, [rawData, filters]);
 
   const handleFiltersChange = useCallback(
     (newFilters: Filter[]) => {

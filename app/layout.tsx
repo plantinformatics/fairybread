@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/app-sidebar"
 import ThemeToggle from "@/components/theme-toggle"
+import { ThemeProvider } from "@/components/theme-provider"
 import { NuqsAdapter } from 'nuqs/adapters/next/app'
 import "./globals.css";
 
@@ -79,7 +80,9 @@ export default function RootLayout({
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <NuqsAdapter>
           <Suspense fallback={null}>
-            <AppFrameWithCookie>{children}</AppFrameWithCookie>
+            <ThemeProvider>
+              <AppFrameWithCookie>{children}</AppFrameWithCookie>
+            </ThemeProvider>
           </Suspense>
         </NuqsAdapter>
       </body>
