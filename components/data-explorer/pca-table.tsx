@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { DataGrid, DataGridContainer } from '@/components/reui/data-grid/data-grid';
 import { DataGridPagination } from '@/components/reui/data-grid/data-grid-pagination';
 import { DataGridTable } from '@/components/reui/data-grid/data-grid-table';
@@ -17,27 +17,63 @@ import {
 
 import { columns, fields, PCAPassportData } from '@/config/table-and-filter-config';
 import { useTableFilters } from '@/hooks/use-table-filters';
-import { PcaTableToolbar } from '@/components/pca-table-toolbar';
+import { PcaTableToolbar } from '@/components/data-explorer/pca-table-toolbar';
 
-export function PcaTable(
-  {rawData, chartSelection}:
-  {rawData: PCAPassportData[], chartSelection:any}
-) {
+export function PcaTable({
+  rawData, 
+  chartSelection, 
+  setChartSelection, 
+  tableFiltered, 
+  setTableFiltered,
+}:{
+  rawData: PCAPassportData[], 
+  chartSelection: { IID: string[] };
+  setChartSelection: React.Dispatch<React.SetStateAction<{ IID: string[] }>>;
+  tableFiltered: { IID: string[] };
+  setTableFiltered: React.Dispatch<React.SetStateAction<{ IID: string[] }>>;
+}) 
+{
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize: 25,
   });
   const [columnOrder, setColumnOrder] = useState<string[]>(columns.map((column) => column.id as string));
   const [sorting, setSorting] = useState<SortingState>([{ id: 'Genotype ID', desc: false }]);
+  const [tableData, setTableData] = useState<PCAPassportData[]>([])
 
+  // Chart selection logic
+  useEffect(() => {
+    const byGenotypeID = new Map(rawData.map((p) => [p.genotypeID, p]));
+    const plotSelectedData =
+      chartSelection.IID.length > 0
+        ? chartSelection.IID.map((id) => byGenotypeID.get(id)).filter(Boolean) as PCAPassportData[]
+        : rawData;
+    setTableData(plotSelectedData);
+  }, [chartSelection, rawData]);
+
+  useEffect(() => {
+    // console.log("Table data has changed:", tableData)
+    // console.table(tableData)
+  }, [tableData])
+
+  // Filter logic
   const { filters, filteredData, handleFiltersChange, clearFilters } =
   useTableFilters<PCAPassportData>({
-    rawData,
+    tableData,
     fields,
     onFiltersChange: () => {
       setPagination((prev) => ({ ...prev, pageIndex: 0 }));
     },
   });
+
+  useEffect(() => {
+    const byGenotypeID = { IID: filteredData.map((p:any) => p.genotypeID)}
+    setTableFiltered(byGenotypeID)
+  }, [filteredData])
+
+  useEffect(() => {
+    console.log("TableFiltered has changed", tableFiltered)
+  }, [tableFiltered])
 
   const table = useReactTable({
     columns,

@@ -5,14 +5,14 @@ import { type Filter, type FilterFieldConfig } from "@/components/reui/filters"
 import { applyFilters } from "@/lib/filter-engine"
 
 interface UseTableFiltersOptions<TRow extends Record<string, unknown>> {
-  rawData: TRow[]
+  tableData: TRow[]
   fields: FilterFieldConfig[]
   debounceMs?: number
   onFiltersChange?: (filters: Filter[]) => void
 }
 
 export function useTableFilters<TRow extends Record<string, unknown>>({
-  rawData,
+  tableData,
   fields,
   debounceMs = 250,
   onFiltersChange,
@@ -40,8 +40,8 @@ export function useTableFilters<TRow extends Record<string, unknown>>({
   })
 
   const filteredData = useMemo(() => {
-    return applyFilters<TRow>(rawData, filters)
-  }, [rawData, filters])
+    return applyFilters<TRow>(tableData, filters)
+  }, [tableData, filters])
 
   const handleFiltersChange = useCallback(
     (newFilters: Filter[]) => {
