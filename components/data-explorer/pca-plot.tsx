@@ -27,7 +27,7 @@ export function PcaPlot({
   chartSelection: { IID: string[] };
   setChartSelection: React.Dispatch<React.SetStateAction<{ IID: string[] }>>;
   tableFiltered: { IID: string[] };
-  settableFiltered: React.Dispatch<React.SetStateAction<{ IID: string[] }>>;
+  setTableFiltered: React.Dispatch<React.SetStateAction<{ IID: string[] }>>;
   isDarkMode: boolean;
   palette: string;
 }) 
