@@ -51,9 +51,9 @@ export function PcaTable({
     setTableData(plotSelectedData);
   }, [chartSelection, rawData]);
 
+  // logging for selection remove later
   useEffect(() => {
-    // console.log("Table data has changed:", tableData)
-    // console.table(tableData)
+    console.log("Table data has changed:", tableData)
   }, [tableData])
 
   // Filter logic
@@ -61,16 +61,18 @@ export function PcaTable({
   useTableFilters<PCAPassportData>({
     tableData,
     fields,
-    onFiltersChange: () => {
+    onFiltersChange: () => { // resert page to 0 when a filter is applied
       setPagination((prev) => ({ ...prev, pageIndex: 0 }));
     },
   });
 
+  // Used to create the subset for pca-plot
   useEffect(() => {
     const byGenotypeID = { IID: filteredData.map((p:any) => p.genotypeID)}
     setTableFiltered(byGenotypeID)
   }, [filteredData])
 
+  // logging please remove later
   useEffect(() => {
     console.log("TableFiltered has changed", tableFiltered)
   }, [tableFiltered])

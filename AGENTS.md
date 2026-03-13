@@ -7,6 +7,7 @@ The role of this file is to describe common mistakes and confusion points that a
 - This app has no users and no real data yet. Make what ever changes you want and don't worry about it. We will figure it out when we ship. Change data schemas if it asists in future development or clarity.
 - Do not ask to run bun dev, it is already running.
 - After making a change check to see if anything has now made redundant and remove anything that is redundant
+- Do not concern yourself with backwards compatability for files and routes. Freely change them as there are no users or real data yet.
 
 ## Plan Mode
 

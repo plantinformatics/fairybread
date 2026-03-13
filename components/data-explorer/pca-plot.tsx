@@ -58,6 +58,7 @@ export function PcaPlot({
     }
   }, [setChartSelection]);
 
+  // used for logging please remove
   useEffect(() => {
     console.log("Chart Selection changed:", chartSelection);
   }, [chartSelection]);

@@ -1,6 +1,6 @@
 'use client';
 
-import { useQueryStates, parseAsString } from 'nuqs';
+import { useQueryState, parseAsString } from 'nuqs';
 import { useEffect, useState } from 'react';
 import { fetchPCAPassportData } from '@/lib/fetchPCAPassportData';
 import { useTheme } from '@/components/theme-provider';
@@ -8,13 +8,12 @@ import type { PCAPassportData } from '@/config/table-and-filter-config';
 
 import { PcaTable } from '@/components/data-explorer/pca-table';
 import { PcaPlot } from "@/components/data-explorer/pca-plot";
+import { PcaGroupByDropdown } from '@/components/data-explorer/pca-group-by-dropdown';
 
 export default function Page() {
-  const [{ file, groupBy, palette }] = useQueryStates({
-    file: parseAsString.withDefault('Wheat'),
-    groupBy: parseAsString.withDefault('subRegion'),
-    palette: parseAsString.withDefault('Dark')
-  });
+  const [file, setFile] = useQueryState("file", parseAsString.withDefault("Wheat"));
+  const [groupBy, setGroupBy] = useQueryState("groupBy", parseAsString.withDefault("subRegion"));
+  const [palette, setPalette] = useQueryState("palette", parseAsString.withDefault("Dark"));
 
   const [rawData, setRawData] = useState<PCAPassportData[]>([]);
   const { isDark: isDarkMode } = useTheme();
@@ -30,10 +29,13 @@ export default function Page() {
       setRawData(await fetchPCAPassportData(file))
     }
     loadData();
-  }, [file, groupBy]);
+  }, [file]);
 
   return (
     <div className="w-full pl-10">
+      <div className="mb-2 flex justify-end">
+        <PcaGroupByDropdown groupBy={groupBy} setGroupBy={setGroupBy} />
+      </div>
       <PcaPlot
       rawData={rawData}
       groupBy={groupBy}

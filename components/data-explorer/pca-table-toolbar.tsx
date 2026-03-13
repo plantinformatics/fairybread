@@ -8,21 +8,23 @@ import type { Table } from '@tanstack/react-table';
 
 import { type PCAPassportData } from '@/config/table-and-filter-config';
 
-interface PcaTableToolbarProps {
-  table: Table<PCAPassportData>;
-  filters: Filter[];
-  fields: FilterFieldConfig[];
-  onFiltersChange: (newFilters: Filter[]) => void;
-  onClearFilters: () => void;
-}
-
 export function PcaTableToolbar({
   table,
   filters,
   fields,
   onFiltersChange,
   onClearFilters,
-}: PcaTableToolbarProps) {
+  // groupBy,
+  // setGroupBy,
+}: {
+  table: Table<PCAPassportData>;
+  filters: Filter[];
+  fields: FilterFieldConfig[];
+  onFiltersChange: (newFilters: Filter[]) => void;
+  onClearFilters: () => void;
+  // groupBy: string;
+  // setGroupBy: (value: string) => void | Promise<unknown>;
+}) {
   return (
     <div className="mb-5 flex items-start gap-2.5">
       <div className="flex-1">
