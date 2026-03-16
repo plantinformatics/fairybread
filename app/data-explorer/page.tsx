@@ -8,7 +8,6 @@ import type { PCAPassportData } from '@/config/table-and-filter-config';
 
 import { PcaTable } from '@/components/data-explorer/pca-table';
 import { PcaPlot } from "@/components/data-explorer/pca-plot";
-import { PcaGroupByDropdown } from '@/components/data-explorer/pca-group-by-dropdown';
 
 export default function Page() {
   const [file, setFile] = useQueryState("file", parseAsString.withDefault("Wheat"));
@@ -33,9 +32,6 @@ export default function Page() {
 
   return (
     <div className="w-full pl-10">
-      <div className="mb-2 flex justify-end">
-        <PcaGroupByDropdown groupBy={groupBy} setGroupBy={setGroupBy} />
-      </div>
       <PcaPlot
       rawData={rawData}
       groupBy={groupBy}
@@ -48,6 +44,8 @@ export default function Page() {
       />
       <PcaTable 
       rawData={rawData} 
+      groupBy={groupBy}
+      setGroupBy={setGroupBy}
       chartSelection={chartSelection}
       setChartSelection={setChartSelection}
       tableFiltered={tableFiltered}

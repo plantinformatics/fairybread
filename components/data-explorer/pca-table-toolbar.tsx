@@ -3,8 +3,10 @@
 import { Button } from '@/components/ui/button';
 import { DataGridColumnVisibility } from '@/components/reui/data-grid/data-grid-column-visibility';
 import { Filters, type Filter, type FilterFieldConfig } from '@/components/reui/filters';
-import { FunnelX, Settings2, ListFilterIcon } from 'lucide-react';
+import { FunnelX, Plus, Settings2 } from 'lucide-react';
 import type { Table } from '@tanstack/react-table';
+
+import { PcaGroupByDropdown } from '@/components/data-explorer/pca-group-by-dropdown';
 
 import { type PCAPassportData } from '@/config/table-and-filter-config';
 
@@ -14,16 +16,16 @@ export function PcaTableToolbar({
   fields,
   onFiltersChange,
   onClearFilters,
-  // groupBy,
-  // setGroupBy,
+  groupBy,
+  setGroupBy,
 }: {
   table: Table<PCAPassportData>;
   filters: Filter[];
   fields: FilterFieldConfig[];
   onFiltersChange: (newFilters: Filter[]) => void;
   onClearFilters: () => void;
-  // groupBy: string;
-  // setGroupBy: (value: string) => void | Promise<unknown>;
+  groupBy: string;
+  setGroupBy: (value: string) => void | Promise<unknown>;
 }) {
   return (
     <div className="mb-5 flex items-start gap-2.5">
@@ -36,7 +38,7 @@ export function PcaTableToolbar({
           size="sm"
           trigger={
             <Button variant="outline" size="sm">
-              <ListFilterIcon className="mr-1 h-4 w-4" />
+              <Plus className="mr-1 h-4 w-4" />
               Add Filter
             </Button>
           }
@@ -51,6 +53,7 @@ export function PcaTableToolbar({
           </Button>
         }
       />
+      <PcaGroupByDropdown groupBy={groupBy} setGroupBy={setGroupBy} />
       {filters.length > 0 && (
         <Button variant="outline" size="sm" onClick={onClearFilters}>
           <FunnelX /> Clear

@@ -25,12 +25,16 @@ export function PcaTable({
   setChartSelection, 
   tableFiltered, 
   setTableFiltered,
+  groupBy,
+  setGroupBy,
 }:{
   rawData: PCAPassportData[], 
   chartSelection: { IID: string[] };
   setChartSelection: React.Dispatch<React.SetStateAction<{ IID: string[] }>>;
   tableFiltered: { IID: string[] };
   setTableFiltered: React.Dispatch<React.SetStateAction<{ IID: string[] }>>;
+  groupBy: string;
+  setGroupBy: (value: string) => void | Promise<unknown>;
 }) 
 {
   const [pagination, setPagination] = useState<PaginationState>({
@@ -104,6 +108,8 @@ export function PcaTable({
         fields={fields}
         onFiltersChange={handleFiltersChange}
         onClearFilters={clearFilters}
+        groupBy={groupBy}
+        setGroupBy={setGroupBy}
       />
       <DataGrid
         table={table}

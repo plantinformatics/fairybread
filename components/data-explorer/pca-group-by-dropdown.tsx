@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { columns } from '@/config/table-and-filter-config';
-import { Group } from 'lucide-react';
+import { ChevronsUpDown, Group } from 'lucide-react';
 
 const groupingColumns = columns.filter(
   (col): col is (typeof columns)[number] & { accessorKey: string } =>
@@ -29,8 +29,17 @@ export function PcaGroupByDropdown({
     void setGroupBy(value);
   };
 
+  const options = [
+    ...groupingColumns.map((col) => ({
+      value: col.accessorKey,
+      label: String(col.id),
+    })),
+    { value: 'textFilter', label: 'Text filter' },
+    { value: 'null', label: 'No grouping' },
+  ];
+
   const groupByLabel =
-    groupingColumns.find((col) => col.accessorKey === groupBy)?.id ??
+    options.find((option) => option.value === groupBy)?.label ??
     (groupBy === 'textFilter' ? 'Text filter' : groupBy === 'null' ? 'No grouping' : 'Group by');
 
   return (
@@ -38,22 +47,21 @@ export function PcaGroupByDropdown({
       <DropdownMenuTrigger
         render={
           <Button variant="outline" size="sm">
-            <Group className="mr-1 h-4 w-4" />
-            {groupByLabel}
+            <Group className="mr-1 h-4 w-4 shrink-0" />
+            <span className="truncate">{groupByLabel}</span>
+            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         }
       />
-      <DropdownMenuContent align="end" className="min-w-[180px]">
+      <DropdownMenuContent align="end">
         <DropdownMenuGroup>
           <DropdownMenuLabel className="font-medium">Group graph by</DropdownMenuLabel>
           <DropdownMenuRadioGroup value={groupBy} onValueChange={onGroupByChange}>
-            {groupingColumns.map((col) => (
-              <DropdownMenuRadioItem key={col.id as string} value={col.accessorKey}>
-                {String(col.id)}
+            {options.map((option) => (
+              <DropdownMenuRadioItem key={option.value} value={option.value}>
+                {option.label}
               </DropdownMenuRadioItem>
             ))}
-            <DropdownMenuRadioItem value="textFilter">Text filter</DropdownMenuRadioItem>
-            <DropdownMenuRadioItem value="null">No grouping</DropdownMenuRadioItem>
           </DropdownMenuRadioGroup>
         </DropdownMenuGroup>
       </DropdownMenuContent>
