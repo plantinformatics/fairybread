@@ -74,6 +74,7 @@ export function PcaTable({
   useEffect(() => {
     const byGenotypeID = { IID: filteredData.map((p:any) => p.genotypeID)}
     setTableFiltered(byGenotypeID)
+    // add something here to set the group by to text filter
   }, [filteredData])
 
   // logging please remove later
