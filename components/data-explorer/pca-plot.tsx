@@ -5,7 +5,6 @@ import { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import { extractSortAndFilter, createPlotData } from "@/lib/dataProcessing";
 import { chartConfig, buildChartLayout } from "@/config/chart-config";
 import type { PCAPassportData } from "@/config/table-and-filter-config";
-import { table } from "console";
 
 const Plot = dynamic(() => import("react-plotly.js"), {
   ssr: false,
@@ -40,21 +39,21 @@ export function PcaPlot({
 
   useEffect(()=>{
     setLoading(true);
-    const sortedEntries = extractSortAndFilter(rawData, groupBy, 15);
-    const plotData = createPlotData(sortedEntries, groupBy);
-    setData(plotData)
-    setLoading(false);
-  }, [rawData, groupBy])
-
-  // handle what happens when a text filter is applied from table
-  useEffect (() => {
-    const tableFilteredSet = new Set(tableFiltered.IID)
-    const groupedData = Object.groupBy(
+    if (groupBy == "textFilter") {
+      const tableFilteredSet = new Set(tableFiltered.IID)
+      const groupedData = Object.groupBy(
       rawData, 
       item => tableFilteredSet.has(item.genotypeID) ? "Match" : "Not Match")
-    const plotData = createPlotData(Object.entries(groupedData), groupBy)
-    setData(plotData)
-  }, [tableFiltered, rawData])
+      const textFilteredData = createPlotData(Object.entries(groupedData), groupBy)
+      setData(textFilteredData)
+    } else {
+      const sortedEntries = extractSortAndFilter(rawData, groupBy, 15);
+      const groupedPlotData = createPlotData(sortedEntries, groupBy);
+      setData(groupedPlotData)
+    }
+    setLoading(false);
+  }, [rawData, groupBy, tableFiltered])
+
 
   // Used because dark mode needs to be an explicit theme change for plotly
   const dynamicLayout = useMemo(() => {
