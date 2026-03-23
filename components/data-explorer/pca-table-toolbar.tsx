@@ -53,11 +53,13 @@ export function PcaTableToolbar({
           </Button>
         }
       />
-      <PcaGroupByDropdown groupBy={groupBy} setGroupBy={setGroupBy} />
-      {filters.length > 0 && (
-        <Button variant="outline" size="sm" onClick={onClearFilters}>
-          <FunnelX /> Clear
-        </Button>
+      <PcaGroupByDropdown 
+        groupBy={groupBy} 
+        setGroupBy={setGroupBy} />
+        {filters.length > 0 && (
+          <Button variant="outline" size="sm" onClick={onClearFilters}>
+            <FunnelX /> Clear
+          </Button>
       )}
     </div>
   );

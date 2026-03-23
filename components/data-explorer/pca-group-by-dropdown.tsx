@@ -35,12 +35,11 @@ export function PcaGroupByDropdown({
       label: String(col.id),
     })),
     { value: 'textFilter', label: 'Text filter' },
-    { value: 'null', label: 'No grouping' },
   ];
 
   const groupByLabel =
     options.find((option) => option.value === groupBy)?.label ??
-    (groupBy === 'textFilter' ? 'Text filter' : groupBy === 'null' ? 'No grouping' : 'Group by');
+    (groupBy === 'textFilter' ? 'Text filter' : 'Group by');
 
   return (
     <DropdownMenu>

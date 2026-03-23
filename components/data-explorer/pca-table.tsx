@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { DataGrid, DataGridContainer } from '@/components/reui/data-grid/data-grid';
 import { DataGridPagination } from '@/components/reui/data-grid/data-grid-pagination';
 import { DataGridTable } from '@/components/reui/data-grid/data-grid-table';
@@ -44,6 +44,16 @@ export function PcaTable({
   const [columnOrder, setColumnOrder] = useState<string[]>(columns.map((column) => column.id as string));
   const [sorting, setSorting] = useState<SortingState>([{ id: 'Genotype ID', desc: false }]);
   const [tableData, setTableData] = useState<PCAPassportData[]>([])
+  const previousGroupByRef = useRef<string>(groupBy === "textFilter" ? "textFilter" : groupBy);
+  const isAutoTextFilterGroupByRef = useRef<boolean>(false);
+  const { filters, filteredData, handleFiltersChange, clearFilters } =
+  useTableFilters<PCAPassportData>({
+    tableData,
+    fields,
+    onFiltersChange: () => { // resert page to 0 when a filter is applied
+      setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+    },
+  });
 
   // Chart selection logic
   useEffect(() => {
@@ -59,22 +69,36 @@ export function PcaTable({
   useEffect(() => {
     console.log("Table data has changed:", tableData)
   }, [tableData])
+  // Used for auto switching groupBy to text filter and back
+  const hasTextFilterInput = useMemo(() => {
+    return filters.some((filter) =>
+      (filter.values ?? []).some((value) => String(value).trim() !== "")
+    );
+  }, [filters]);
 
-  // Filter logic
-  const { filters, filteredData, handleFiltersChange, clearFilters } =
-  useTableFilters<PCAPassportData>({
-    tableData,
-    fields,
-    onFiltersChange: () => { // resert page to 0 when a filter is applied
-      setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-    },
-  });
+  useEffect(() => {
+    if (hasTextFilterInput) {
+      if (groupBy !== "textFilter") {
+        previousGroupByRef.current = groupBy;
+        isAutoTextFilterGroupByRef.current = true;
+        setGroupBy("textFilter");
+      }
+      return;
+    }
+
+    if (isAutoTextFilterGroupByRef.current && groupBy === "textFilter") {
+      isAutoTextFilterGroupByRef.current = false;
+      if (previousGroupByRef.current !== "textFilter") {
+        setGroupBy(previousGroupByRef.current);
+      }
+      return;
+    }
+  }, [groupBy, hasTextFilterInput, setGroupBy]);
 
   // Used to create the subset for pca-plot
   useEffect(() => {
     const byGenotypeID = { IID: filteredData.map((p:any) => p.genotypeID)}
     setTableFiltered(byGenotypeID)
-    // add something here to set the group by to text filter
   }, [filteredData])
 
   // logging please remove later
