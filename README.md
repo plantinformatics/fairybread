@@ -1,36 +1,121 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Fairybread
+
+Fairybread is a Next.js app for exploring Principal Component Analysis (PCA) data for crop germplasm collections. It combines PCA coordinate files with passport metadata sourced from [Genesys](https://www.genesys-pgr.org/) via the [Genolink API](https://genolink.plantinformatics.io/) so researchers can inspect diversity patterns in both a chart and a table.
+
+## What It Does
+
+- Renders an interactive PCA scatter plot with lasso selection and zoom/pan
+- Displays linked passport records in a filterable, sortable, column-configurable table
+- Keeps chart and table in sync in both directions (plot selection filters table, table filters affect plot groups)
+- Persists key UI state in the URL query string for shareable views (unstable)
+- Supports multiple grouping dimensions and chart palettes
+
+## Data Sources
+
+Fairybread currently supports:
+
+- Wheat - [10.7910/DVN/CRSI0B](https://doi.org/10.7910/DVN/CRSI0B)
+- Barley - [10.7910/DVN/H6SNVM](https://doi.org/10.7910/DVN/H6SNVM)
+- Chickpea - [10.7910/DVN/ECQ4NC](https://doi.org/10.7910/DVN/ECQ4NC)
+- Field Pea - [10.7910/DVN/A6WGYS](https://doi.org/10.7910/DVN/A6WGYS)
+- Lentil - [10.7910/DVN/T0TDAS](https://doi.org/10.7910/DVN/T0TDAS)
+- Lupin - [10.7910/DVN/FVTFIL](https://doi.org/10.7910/DVN/FVTFIL)
+
+PCA coordinate files are loaded from hosted TSV/TXT assets and joined with passport records fetched from Genesys via Genolink.
+
+## How It Works
+
+1. The app redirects `/` to `/data-explorer`
+2. A selected crop file is read from the `file` URL param (default: `Wheat`)
+3. PCA coordinates are fetched and parsed
+4. Genotype IDs are batched into paged Genolink requests
+5. Passport rows are normalized and merged with PCA rows by genotype ID
+6. Resulting merged rows drive both the Plotly chart and TanStack table
+
+Server-side fetches use Next.js caching to reduce repeated API calls.
+
+## URL State
+
+The data explorer stores key state in query params:
+
+- `file` - selected crop dataset
+- `groupBy` - chart grouping field (for example `subRegion`)
+- `palette` - chart color palette
+
+This allows links to preserve the selected data + view configuration.
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 20+
+- Any one package manager: `bun`, `npm`, `pnpm`, or `yarn`
+
+### Install
+
+```bash
+bun install
+```
+
+Or:
+
+```bash
+npm install
+# pnpm install
+# yarn install
+```
+
+### Run Dev Server
+
+```bash
+bun run dev
+```
+
+Or:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# pnpm dev
+# yarn dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000). The app redirects to `/data-explorer`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Build + Start
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+bun run build
+bun run start
+```
 
-## Learn More
+Or:
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm run build
+npm run start
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Lint
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+bun run lint
+```
 
-## Deploy on Vercel
+## Tech Stack
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- Next.js 16 (App Router)
+- React 19 + TypeScript
+- Plotly (`react-plotly.js`) for PCA visualization
+- TanStack Table for tabular exploration
+- `nuqs` for URL-synced state
+- Tailwind CSS 4 + shadcn/ui components
+- `reUI` components for advanced table, filter, and data-grid UX
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Project Notes
+
+- No local `.env` configuration is required for core usage.
+- If you add a new crop, update `config/pca-location-config.ts` with its file URL and DOI metadata.
+
+## License
+
+See [LICENSE](./LICENSE).
