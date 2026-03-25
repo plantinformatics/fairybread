@@ -82,7 +82,12 @@ export const columns: FilterableColumnDef[] = [
         cell: ({ row }) => {
             // genesys uses the doi as the URL not the accession number
             return (
-                <a href={"https://www.genesys-pgr.org/" + row.original.doi as string} target="_blank" rel="noopener noreferrer">
+                <a
+                    href={"https://www.genesys-pgr.org/" + row.original.doi as string}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-bold underline-offset-4 hover:underline"
+                >
                   {row.original.accessionNumber as string}
                 </a>
             )
@@ -154,7 +159,12 @@ export const columns: FilterableColumnDef[] = [
         accessorKey: "doi",
         header: "DOI",
         cell: ({ getValue }) => (
-            <a href={"https://doi.org/" +getValue() as string} target="_blank" rel="noopener noreferrer">
+            <a
+                href={"https://doi.org/" +getValue() as string}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-bold underline-offset-4 hover:underline"
+            >
               {getValue() as string}
             </a>
         ),

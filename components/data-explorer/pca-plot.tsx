@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import { extractSortAndFilter, createPlotData } from "@/lib/dataProcessing";
 import { chartConfig, buildChartLayout } from "@/config/chart-config";
 import type { PCAPassportData } from "@/config/table-and-filter-config";
+import { LoadingOverlay } from "@/components/data-explorer/pca-plot-loading-overlay";
 
 const Plot = dynamic(() => import("react-plotly.js"), {
   ssr: false,
@@ -14,6 +15,7 @@ const Plot = dynamic(() => import("react-plotly.js"), {
 
 export function PcaPlot({
   rawData, 
+  isLoading,
   groupBy, 
   chartSelection, 
   setChartSelection, 
@@ -23,6 +25,7 @@ export function PcaPlot({
   palette
 }:{ 
   rawData: PCAPassportData[];
+  isLoading: boolean;
   groupBy: string;
   chartSelection: { IID: string[] };
   setChartSelection: React.Dispatch<React.SetStateAction<{ IID: string[] }>>;
@@ -85,8 +88,11 @@ export function PcaPlot({
   isSelectionBoundRef.current = false;
   bindSelectionIfNeeded(graphDiv);
   }    
+  const isPlotLoading = isLoading || loading;
+
   return (
-      <div className={`w-full h-[60vh] max-h-[60vh] py-2 overflow-hidden box-border ${loading ? 'blur-xs' : 'blur-none'}`}>
+      <div className="relative w-full h-[60vh] max-h-[60vh] py-2 overflow-hidden box-border">
+        {isPlotLoading && <LoadingOverlay message="Loading plot..." />}
         <Plot
           data={data}
           layout={dynamicLayout}

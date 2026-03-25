@@ -1,6 +1,6 @@
 "use client"
 
-import { Calendar, Home, Inbox, Search, Settings, Grid2X2, Group, PanelRight, GalleryVerticalEnd, CheckSquare } from "lucide-react"
+import { Home, Settings } from "lucide-react"
 
 import {
   Sidebar,
@@ -74,8 +74,8 @@ export function AppSidebar() {
   return (
     <Sidebar variant="sidebar" collapsible='icon'>
       <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupContent>
+        <SidebarGroup className="h-full">
+          <SidebarGroupContent className="flex h-full flex-col">
             <SidebarMenu>
               {items.map((item) => (
                 <SidebarMenuItem key={item.title}>
@@ -93,6 +93,11 @@ export function AppSidebar() {
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>
+            <div className="group-data-[collapsible=icon]:hidden mt-auto space-y-6 px-2 pb-3 pt-4">
+              <img src="/grdc3.svg" alt="GRDC 3" className="w-full h-auto" />
+              <img src="/agiVic.svg" alt="AGI Vic" className="w-full h-auto" />
+              <img src="/grdc2.svg" alt="GRDC 2" className="w-full h-auto" />
+            </div>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>

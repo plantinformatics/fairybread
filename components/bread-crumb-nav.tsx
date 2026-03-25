@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronDown, FileText, Sprout } from "lucide-react"
+import { ChevronDown, FileText, Sprout, SquareArrowOutUpRight } from "lucide-react"
 import { parseAsString, useQueryState } from "nuqs";
 import {
   Breadcrumb,
@@ -65,11 +65,12 @@ export default function BreadCrumbNav() {
             href={selectedFileInfo?.doiUrl ?? "#"}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex max-w-[30vw] items-center gap-1.5 leading-none text-foreground"
+            className="inline-flex max-w-[30vw] items-center gap-1.5 leading-none text-foreground hover:underline"
             title={selectedFileInfo?.doiTitle ?? "DOI"}
           >
             <FileText className="size-3.5 shrink-0" />
             <span className="truncate">{selectedFileInfo?.doiTitle ?? "DOI"}</span>
+            <SquareArrowOutUpRight className="size-4 shrink-0" />
           </BreadcrumbLink>
         </BreadcrumbItem>
       </BreadcrumbList>

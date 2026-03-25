@@ -15,6 +15,7 @@ export default function Page() {
   const [palette, setPalette] = useQueryState("palette", parseAsString.withDefault("Dark"));
 
   const [rawData, setRawData] = useState<PCAPassportData[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const { isDark: isDarkMode } = useTheme();
   const [chartSelection, setChartSelection] = useState<{ IID: string[] }>({
     IID: []
@@ -25,7 +26,9 @@ export default function Page() {
 
   useEffect(() => {
     async function loadData() {
+      setIsLoading(true);
       setRawData(await fetchPCAPassportData(file))
+      setIsLoading(false);
     }
     loadData();
   }, [file]);
@@ -34,6 +37,7 @@ export default function Page() {
     <div className="w-full pl-10">
       <PcaPlot
       rawData={rawData}
+      isLoading={isLoading}
       groupBy={groupBy}
       chartSelection={chartSelection}
       setChartSelection={setChartSelection}
@@ -44,6 +48,7 @@ export default function Page() {
       />
       <PcaTable 
       rawData={rawData} 
+      isLoading={isLoading}
       groupBy={groupBy}
       setGroupBy={setGroupBy}
       chartSelection={chartSelection}

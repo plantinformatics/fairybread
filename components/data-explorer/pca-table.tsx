@@ -20,7 +20,8 @@ import { useTableFilters } from '@/hooks/use-table-filters';
 import { PcaTableToolbar } from '@/components/data-explorer/pca-table-toolbar';
 
 export function PcaTable({
-  rawData, 
+  rawData,
+  isLoading,
   chartSelection, 
   setChartSelection, 
   tableFiltered, 
@@ -28,7 +29,8 @@ export function PcaTable({
   groupBy,
   setGroupBy,
 }:{
-  rawData: PCAPassportData[], 
+  rawData: PCAPassportData[],
+  isLoading: boolean;
   chartSelection: { IID: string[] };
   setChartSelection: React.Dispatch<React.SetStateAction<{ IID: string[] }>>;
   tableFiltered: { IID: string[] };
@@ -139,6 +141,9 @@ export function PcaTable({
       <DataGrid
         table={table}
         recordCount={filteredData?.length || 0}
+        isLoading={isLoading}
+        loadingMode="spinner"
+        loadingMessage="Loading crop data..."
         tableLayout={{
           columnsMovable: true,
           headerSticky: true,
