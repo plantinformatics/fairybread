@@ -2,7 +2,6 @@ export const chartLayout = {
     autosize: true,
     xaxis: {
       title: { text: "Principal Component 1 (PC1)" },
-      autorange: true,
       showgrid: true,
       gridcolor: "#e5e7eb",
       zeroline: true,
@@ -10,7 +9,6 @@ export const chartLayout = {
     },
     yaxis: {
       title: { text: "Principal Component 2 (PC2)" },
-      autorange: true,
       showgrid: true,
       gridcolor: "#e5e7eb",
       zeroline: true,
@@ -105,6 +103,8 @@ export function buildChartLayout(isDarkMode: boolean, palette: string) {
       bgcolor: theme.modebarBgColor,
       activecolor: theme.modebarActiveColor,
     },
+    // Preserve legend visibility and pan/zoom while external state updates.
+    uirevision: "pca-plot",
   };
 }
 
