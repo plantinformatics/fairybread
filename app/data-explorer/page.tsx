@@ -8,6 +8,7 @@ import type { PCAPassportData } from '@/config/table-and-filter-config';
 
 import { PcaTable } from '@/components/data-explorer/pca-table';
 import { PcaPlot } from "@/components/data-explorer/pca-plot";
+import BottomFooter from '@/components/bottom-footer';
 
 export default function Page() {
   const [file, setFile] = useQueryState("file", parseAsString.withDefault("Wheat"));
@@ -56,6 +57,7 @@ export default function Page() {
       tableFiltered={tableFiltered}
       setTableFiltered={setTableFiltered} 
       />
+      <BottomFooter></BottomFooter>
     </div>
   );
 }

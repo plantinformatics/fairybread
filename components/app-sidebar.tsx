@@ -94,9 +94,15 @@ export function AppSidebar() {
               ))}
             </SidebarMenu>
             <div className="group-data-[collapsible=icon]:hidden mt-auto space-y-6 px-2 pb-3 pt-4">
-              <img src="/grdc3.svg" alt="GRDC 3" className="w-full h-auto" />
-              <img src="/agiVic.svg" alt="AGI Vic" className="w-full h-auto" />
-              <img src="/grdc2.svg" alt="GRDC 2" className="w-full h-auto" />
+              <p className="text-sm text-muted-foreground">
+                The <a href="https://agg.plantinformatics.io/strategic-partnership/" target="_blank" rel="noopener noreferrer" className="font-bold">Australian Grains Genebank (AGG)</a> Strategic 
+                Partnership is a $30M joint investment between the Victorian State Government and 
+                the <a href="https://grdc.com.au/" target="_blank" rel="noopener noreferrer" className="font-bold">Grains Research and Development Corporation (GRDC)</a> that 
+                aims to unlock the genetic potential of plant genetic resources for the benefit of Australian grain growers. Find out more about the <a href="https://agg.plantinformatics.io/strategic-partnership/" target="_blank" rel="noopener noreferrer">AGG strategic partnership</a>.
+              </p>
+              <img src="/grdc3.svg" alt="GRDC 3" className="w-4/5 h-auto" />
+              <img src="/agiVic.svg" alt="AGI Vic" className="w-4/5 h-auto" />
+              <img src="/grdc2.svg" alt="GRDC 2" className="w-4/5 h-auto" />
             </div>
           </SidebarGroupContent>
         </SidebarGroup>
