@@ -1,6 +1,17 @@
 "use client"
 
-import { Home, Settings } from "lucide-react"
+import {
+  Calendar,
+  CheckSquare,
+  GalleryVerticalEnd,
+  Grid2x2,
+  Group,
+  Home,
+  Inbox,
+  PanelRight,
+  Search,
+  Settings,
+} from "lucide-react"
 
 import {
   Sidebar,
@@ -22,7 +33,7 @@ const items = [
   // {
   //   title: "Button Variants",
   //   url: "/button-variants",
-  //   icon: Grid2X2,
+  //   icon: Grid2x2,
   // },
   // {
   //   title: "Input Group",
@@ -100,9 +111,10 @@ export function AppSidebar() {
                 the <a href="https://grdc.com.au/" target="_blank" rel="noopener noreferrer" className="font-bold">Grains Research and Development Corporation (GRDC)</a> that 
                 aims to unlock the genetic potential of plant genetic resources for the benefit of Australian grain growers. Find out more about the <a href="https://agg.plantinformatics.io/strategic-partnership/" target="_blank" rel="noopener noreferrer">AGG strategic partnership</a>.
               </p>
-              <img src="/grdc3.svg" alt="GRDC 3" className="w-4/5 h-auto" />
-              <img src="/agiVic.svg" alt="AGI Vic" className="w-4/5 h-auto" />
-              <img src="/grdc2.svg" alt="GRDC 2" className="w-4/5 h-auto" />
+              <p className="text-sm text-muted-foreground">Passport data sourced from <a href="https://www.genesys-pgr.org/" target="_blank" rel="noopener noreferrer" className="font-bold">Genesys-PGR</a> via <a href="https://genolink.plantinformatics.io/" target="_blank" rel="noopener noreferrer">Genolink</a>. Use of this service 
+                means you agree to the Genesys-PGR <a href="https://www.genesys-pgr.org/content/legal/terms" target="_blank" rel="noopener noreferrer" className="font-bold">Terms and Conditions</a> and 
+                acknowledge Genesys-PGR as the original source when using passport data via Fairybread.
+              </p>
             </div>
           </SidebarGroupContent>
         </SidebarGroup>
