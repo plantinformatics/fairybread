@@ -1,5 +1,9 @@
 # Fairybread
 
+FairyBread is funded by the Australian Grains Genebank (AGG) Strategic Partnership, a $30M joint investment between the Victorian State Government and the Grains Research and Development Corporation (GRDC) that aims to unlock the genetic potential of plant genetic resources for the benefit of Australian grain growers.
+
+Use the online version with pre-loaded datasets at [fairybread.plantinformatics.io](https://fairybread.plantinformatics.io/?page=1).
+
 Fairybread is a Next.js app for exploring Principal Component Analysis (PCA) data for crop germplasm collections. It combines PCA coordinate files with passport metadata sourced from [Genesys](https://www.genesys-pgr.org/) via the [Genolink API](https://genolink.plantinformatics.io/) so researchers can inspect diversity patterns in both a chart and a table.
 
 ## What It Does
