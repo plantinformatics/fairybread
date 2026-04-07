@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { fetchPCAPassportData } from '@/lib/fetchPCAPassportData';
 import { useTheme } from '@/components/theme-provider';
 import type { PCAPassportData } from '@/config/table-and-filter-config';
+import { usePalettePreference } from '@/hooks/use-palette-preference';
 
 import { PcaTable } from '@/components/data-explorer/pca-table';
 import { PcaPlot } from "@/components/data-explorer/pca-plot";
@@ -13,7 +14,7 @@ import BottomFooter from '@/components/bottom-footer';
 export default function Page() {
   const [file, setFile] = useQueryState("file", parseAsString.withDefault("Wheat"));
   const [groupBy, setGroupBy] = useQueryState("groupBy", parseAsString.withDefault("subRegion"));
-  const [palette, setPalette] = useQueryState("palette", parseAsString.withDefault("Dark"));
+  const { palette } = usePalettePreference();
 
   const [rawData, setRawData] = useState<PCAPassportData[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);

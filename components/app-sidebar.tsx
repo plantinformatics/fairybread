@@ -22,9 +22,17 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
+import type { LucideIcon } from "lucide-react"
+
+type SidebarNavItem = {
+  title: string
+  url: string
+  icon: LucideIcon
+  inactive?: boolean
+}
 
 // Menu items.
-const items = [
+const items: SidebarNavItem[] = [
   {
     title: "Data Explorer",
     url: "/data-explorer",
@@ -75,9 +83,8 @@ const items = [
   // },
   {
     title: "Settings",
-    url: "#",
-    icon: Settings,
-    inactive: true,
+    url: "/settings",
+    icon: Settings
   },
 ]
 
