@@ -111,7 +111,10 @@ export function buildChartLayout(isDarkMode: boolean, palette: string) {
 // Config for the chart
 export const chartConfig = {
     displayModeBar: true,
-    scrollZoom: true
+    scrollZoom: true,
+    toImageButtonOptions: {
+        format: "svg",
+    },
 };
 
 export const chartColourPalettes = new Map<string, string[]>([

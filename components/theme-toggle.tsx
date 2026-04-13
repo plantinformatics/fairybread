@@ -9,7 +9,7 @@ export default function ThemeToggle() {
 
   return (
     <Button
-      variant="ghost"
+      variant="ghostAccent"
       size="icon"
       className="h-8 w-8"
       onClick={toggleTheme}
