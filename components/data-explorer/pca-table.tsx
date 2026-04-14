@@ -143,7 +143,7 @@ export function PcaTable({
         recordCount={filteredData?.length || 0}
         isLoading={isLoading}
         loadingMode="spinner"
-        loadingMessage="Loading crop data..."
+        loadingMessage="Loading passport data..."
         tableLayout={{
           columnsMovable: true,
           headerSticky: true,

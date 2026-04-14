@@ -113,7 +113,7 @@ export const chartConfig = {
     displayModeBar: true,
     scrollZoom: true,
     toImageButtonOptions: {
-        format: "svg",
+        format: "svg" as const,
     },
 };
 

@@ -7,6 +7,7 @@ import { AppSidebar } from "@/components/app-sidebar"
 import ThemeToggle from "@/components/theme-toggle"
 import { ThemeProvider } from "@/components/theme-provider"
 import { NuqsAdapter } from 'nuqs/adapters/next/app'
+import { PcaDataProvider } from "@/context/pca-data-context"
 import "./globals.css";
 
 import BreadCrumbNav from "@/components/bread-crumb-nav"
@@ -81,7 +82,11 @@ export default function RootLayout({
         <NuqsAdapter>
           <Suspense fallback={null}>
             <ThemeProvider>
-              <AppFrameWithCookie>{children}</AppFrameWithCookie>
+              {/* PcaDataProvider owns the shared fetch state — must sit inside
+                  NuqsAdapter (already the parent) so useQueryState works */}
+              <PcaDataProvider>
+                <AppFrameWithCookie>{children}</AppFrameWithCookie>
+              </PcaDataProvider>
             </ThemeProvider>
           </Suspense>
         </NuqsAdapter>
