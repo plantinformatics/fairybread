@@ -2,8 +2,8 @@
 
 import { useQueryState, parseAsString } from 'nuqs';
 import { useState } from 'react';
-import { useTheme } from '@/components/theme-provider';
-import { usePalettePreference } from '@/hooks/use-palette-preference';
+import { useTheme } from '@/context/theme-context';
+import { usePreferences } from '@/context/preferences-context';
 import { usePcaData } from '@/context/pca-data-context';
 
 import { PcaTable } from '@/components/data-explorer/pca-table';
@@ -15,7 +15,7 @@ export default function Page() {
   const { rawData, isLoading } = usePcaData();
 
   const [groupBy, setGroupBy] = useQueryState("groupBy", parseAsString.withDefault("subRegion"));
-  const { palette } = usePalettePreference();
+  const { palette } = usePreferences();
   const { isDark: isDarkMode } = useTheme();
 
   const [chartSelection, setChartSelection] = useState<{ IID: string[] }>({

@@ -4,14 +4,13 @@ import Link from "next/link";
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { chartColourPalettes } from "@/config/chart-config";
-import { usePalettePreference } from "@/hooks/use-palette-preference";
+import { usePreferences } from "@/context/preferences-context";
 
 const PALETTE_NAMES = Array.from(chartColourPalettes.keys());
 
 export default function SettingsPage() {
-  const { palette, setPalette, defaultPalette } = usePalettePreference();
-  const currentPalette = chartColourPalettes.has(palette) ? palette : defaultPalette;
-  const swatches = chartColourPalettes.get(currentPalette) ?? [];
+  const { palette, setPalette } = usePreferences();
+  const swatches = chartColourPalettes.get(palette) ?? [];
 
   const handlePaletteChange = (value: string | null) => {
     if (!value) return;
@@ -27,7 +26,7 @@ export default function SettingsPage() {
 
       <div className="mt-6 rounded-xl border p-5">
         <label className="mb-2 block text-sm font-medium">Plot colour palette</label>
-        <Select value={currentPalette} onValueChange={handlePaletteChange}>
+        <Select value={palette} onValueChange={handlePaletteChange}>
           <SelectTrigger className="w-64" size="sm">
             <SelectValue placeholder="Select a palette" />
           </SelectTrigger>
