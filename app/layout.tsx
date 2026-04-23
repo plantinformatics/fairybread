@@ -9,6 +9,7 @@ import { ThemeProvider } from "@/context/theme-context"
 import { NuqsAdapter } from 'nuqs/adapters/next/app'
 import { PcaDataProvider } from "@/context/pca-data-context"
 import { PreferencesProvider } from "@/context/preferences-context";
+import { CustomListProvider } from "@/context/custom-list-context";
 import "./globals.css";
 
 import BreadCrumbNav from "@/components/bread-crumb-nav"
@@ -86,9 +87,11 @@ export default function RootLayout({
               <PreferencesProvider>
                 {/* PcaDataProvider owns the shared fetch state — must sit inside
                   NuqsAdapter (already the parent) so useQueryState works */}
-                <PcaDataProvider>
-                  <AppFrameWithCookie>{children}</AppFrameWithCookie>
-                </PcaDataProvider>
+                <CustomListProvider>
+                  <PcaDataProvider>
+                    <AppFrameWithCookie>{children}</AppFrameWithCookie>
+                  </PcaDataProvider>
+                </CustomListProvider>
               </PreferencesProvider>
             </ThemeProvider>
           </Suspense>
