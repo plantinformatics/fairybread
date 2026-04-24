@@ -18,6 +18,9 @@ import {
 import { columns, fields, PCAPassportData } from '@/config/table-and-filter-config';
 import { useTableFilters } from '@/hooks/use-table-filters';
 import { PcaTableToolbar } from '@/components/data-explorer/pca-table-toolbar';
+import { useCustomList } from '@/context/custom-list-context';
+import type { FilterFieldConfig } from '@/components/reui/filters';
+import { ListChecks } from 'lucide-react';
 
 export function PcaTable({
   rawData,
@@ -48,10 +51,36 @@ export function PcaTable({
   const [tableData, setTableData] = useState<PCAPassportData[]>([])
   const previousGroupByRef = useRef<string>(groupBy === "textFilter" ? "textFilter" : groupBy);
   const isAutoTextFilterGroupByRef = useRef<boolean>(false);
+  const { customList } = useCustomList();
+
+  // Inject a "Custom List" filter option that is powered by the user's
+  // current custom list. It filters rows by `genotypeID` and is disabled
+  // (greyed out in the add-filter menu) whenever the list is empty.
+  const fieldsWithCustomList = useMemo<FilterFieldConfig[]>(() => {
+    const customListField: FilterFieldConfig = {
+      key: "customList",
+      label: "Custom List",
+      icon: <ListChecks className="size-3.5" />,
+      type: "multiselect",
+      dataKey: "genotypeID",
+      defaultOperator: "is_any_of",
+      operators: [
+        { value: "is_any_of", label: "is any of" },
+        { value: "is_not_any_of", label: "is not any of" },
+      ],
+      disabled: customList.length === 0,
+      options: customList.map((id) => ({ value: id, label: id })),
+      defaultValues: customList,
+      searchable: true,
+      className: "w-56",
+    };
+    return [...fields, customListField];
+  }, [customList]);
+
   const { filters, filteredData, handleFiltersChange, clearFilters } =
   useTableFilters<PCAPassportData>({
     tableData,
-    fields,
+    fields: fieldsWithCustomList,
     onFiltersChange: () => { // resert page to 0 when a filter is applied
       setPagination((prev) => ({ ...prev, pageIndex: 0 }));
     },
@@ -132,7 +161,7 @@ export function PcaTable({
       <PcaTableToolbar
         table={table}
         filters={filters}
-        fields={fields}
+        fields={fieldsWithCustomList}
         onFiltersChange={handleFiltersChange}
         onClearFilters={clearFilters}
         groupBy={groupBy}

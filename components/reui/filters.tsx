@@ -489,6 +489,17 @@ export interface FilterFieldConfig<T = unknown> {
   onInputChange?: (e: React.ChangeEvent<HTMLInputElement>) => void
   // Default operator to use when creating a filter for this field
   defaultOperator?: string
+  // Default values to seed the filter with when it is added from the menu.
+  // When provided, the add-filter menu renders this field as a plain
+  // item (no submenu) that immediately creates a filter with these values.
+  defaultValues?: T[]
+  // Disables the field in the add-filter menu. The item is shown but
+  // greyed out and non-interactive.
+  disabled?: boolean
+  // Actual row data key used when matching against table data. Defaults
+  // to `key` when not set. Use this when the filter's logical identity
+  // (`key`) must differ from the data attribute it reads from.
+  dataKey?: string
   // Controlled values support for this field
   value?: T[]
   onValueChange?: (values: T[]) => void
@@ -1515,7 +1526,12 @@ export function Filters<T = unknown>({
         const defaultOperator =
           field.defaultOperator ||
           (field.type === "multiselect" ? "is_any_of" : "is")
-        const defaultValues: unknown[] = field.type === "text" ? [""] : []
+        const defaultValues: unknown[] =
+          field.defaultValues !== undefined
+            ? (field.defaultValues as unknown[])
+            : field.type === "text"
+              ? [""]
+              : []
         const newFilter = createFilter<T>(
           fieldKey,
           defaultOperator,
@@ -1647,7 +1663,9 @@ export function Filters<T = unknown>({
                             field &&
                             (field.type === "select" ||
                               field.type === "multiselect") &&
-                            field.options?.length
+                            field.options?.length &&
+                            field.defaultValues === undefined &&
+                            !field.disabled
 
                           if (e.key === "ArrowRight" && hasSubMenu) {
                             e.preventDefault()
@@ -1663,11 +1681,12 @@ export function Filters<T = unknown>({
                         } else if (e.key === "Enter" && highlightedIndex >= 0) {
                           e.preventDefault()
                           const field = filteredFields[highlightedIndex]
-                          if (field.key) {
+                          if (field.key && !field.disabled) {
                             const hasSubMenu =
                               (field.type === "select" ||
                                 field.type === "multiselect") &&
-                              field.options?.length
+                              field.options?.length &&
+                              field.defaultValues === undefined
                             if (!hasSubMenu) {
                               addFilter(field.key)
                             } else {
@@ -1719,7 +1738,28 @@ export function Filters<T = unknown>({
                         const hasSubMenu =
                           (field.type === "select" ||
                             field.type === "multiselect") &&
-                          field.options?.length
+                          field.options?.length &&
+                          field.defaultValues === undefined &&
+                          !field.disabled
+
+                        if (field.disabled) {
+                          return (
+                            <DropdownMenuItem
+                              key={field.key}
+                              id={itemId}
+                              role="option"
+                              aria-selected={isHighlighted}
+                              aria-disabled
+                              disabled
+                              data-highlighted={isHighlighted || undefined}
+                              onMouseEnter={() => setHighlightedIndex(index)}
+                              className="data-highlighted:bg-accent data-highlighted:text-accent-foreground"
+                            >
+                              {field.icon}
+                              <span>{field.label}</span>
+                            </DropdownMenuItem>
+                          )
+                        }
 
                         if (hasSubMenu) {
                           const isMultiSelect = field.type === "multiselect"

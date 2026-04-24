@@ -39,9 +39,25 @@ export function useTableFilters<TRow extends Record<string, unknown>>({
     history: "push",
   })
 
+  const fieldsMap = useMemo(() => {
+    const map: Record<string, FilterFieldConfig> = {}
+    fields.forEach((field) => {
+      if (field.key) map[field.key] = field
+    })
+    return map
+  }, [fields])
+
   const filteredData = useMemo(() => {
-    return applyFilters<TRow>(tableData, filters)
-  }, [tableData, filters])
+    // Remap filter.field to the field's dataKey (if provided) so the engine
+    // reads from the correct row attribute. This lets a field have a logical
+    // identity (e.g. "customList") that's distinct from the underlying data
+    // key it filters on (e.g. "genotypeID").
+    const resolvedFilters = filters.map((filter) => {
+      const dataKey = fieldsMap[filter.field]?.dataKey
+      return dataKey ? { ...filter, field: dataKey } : filter
+    })
+    return applyFilters<TRow>(tableData, resolvedFilters)
+  }, [tableData, filters, fieldsMap])
 
   const handleFiltersChange = useCallback(
     (newFilters: Filter[]) => {

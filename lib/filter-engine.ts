@@ -27,8 +27,10 @@ const matchesFilter = <TRow extends Record<string, unknown>>(
 
   switch (operator) {
     case "is":
+    case "is_any_of":
       return values.includes(fieldValue)
     case "is_not":
+    case "is_not_any_of":
       return !values.includes(fieldValue)
     case "contains":
       return values.some((value) =>
