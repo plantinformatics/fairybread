@@ -18,7 +18,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-6 py-8">
+    <div className="mr-auto w-full max-w-3xl px-6 py-8">
       <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
       <p className="mt-2 text-sm text-muted-foreground">
         Choose the default colour palette used by the PCA plot.

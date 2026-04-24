@@ -72,10 +72,11 @@ export default function CustomListPage() {
     setInputText("")
     setMatchedRows([])
     setUnmatchedTerms([])
+    setHasParsed(false)
   };
 
   return (
-    <div className="mr-auto w-full max-w-6xl px-6 py-8">
+    <div className="mr-auto w-full max-w-7xl px-6 py-8">
       <h1 className="text-2xl font-semibold tracking-tight">Custom Accession List</h1>
       <p className="mt-2 text-sm text-muted-foreground">
         Paste a list of accession names or numbers to find their records within
@@ -94,7 +95,19 @@ export default function CustomListPage() {
             <h2 className="text-sm font-semibold tracking-tight">Crop</h2>
           </div>
           <span className="text-xs text-muted-foreground">
-            Dataset: <span className="font-medium text-foreground">{file ?? '—'}</span>
+            Dataset:{' '}
+            {file && PCAFileInfo.get(file) ? (
+              <a
+                href={PCAFileInfo.get(file)!.doiUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-foreground underline-offset-4 hover:underline"
+              >
+                {PCAFileInfo.get(file)!.doiTitle}
+              </a>
+            ) : (
+              <span className="font-medium text-foreground">—</span>
+            )}
           </span>
         </header>
 
@@ -126,7 +139,7 @@ export default function CustomListPage() {
             <h2 className="text-sm font-semibold tracking-tight">Accession list</h2>
           </div>
           <span className="text-xs text-muted-foreground">
-            One per line · TSV first column
+            One per line OR CSV/TSV first column
           </span>
         </header>
 
@@ -202,16 +215,19 @@ export default function CustomListPage() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b text-left text-xs font-medium text-muted-foreground">
+                        <th className="pb-2 pr-4">Genotype ID</th>
                         <th className="pb-2 pr-4">Accession Name</th>
                         <th className="pb-2 pr-4">Accession Number</th>
                         <th className="pb-2 pr-4">Country</th>
-                        <th className="pb-2 pr-4">Region</th>
                         <th className="pb-2">DOI</th>
                       </tr>
                     </thead>
                     <tbody>
                       {matchedRows.map((row) => (
                         <tr key={row.genotypeID} className="border-b last:border-0">
+                          <td className="py-2 pr-4 font-medium">
+                            {row.genotypeID || '—'}
+                          </td>
                           <td className="py-2 pr-4 font-medium">
                             {row.accessionName || '—'}
                           </td>
@@ -233,7 +249,6 @@ export default function CustomListPage() {
                           <td className="py-2 pr-4">
                             {row['countryOfOrigin.name'] || '—'}
                           </td>
-                          <td className="py-2 pr-4">{row.region || '—'}</td>
                           <td className="py-2">
                             {row.doi ? (
                               <a
@@ -282,7 +297,7 @@ export default function CustomListPage() {
                   {unmatchedTerms.map((term, i) => (
                     <li
                       key={i}
-                      className="inline-flex items-center rounded-full border border-destructive/30 bg-destructive/5 px-2.5 py-1 font-mono text-xs text-destructive shadow-sm transition-colors hover:border-destructive/50 hover:bg-destructive/10"
+                      className="inline-flex items-center rounded-full border border-destructive/30 bg-destructive/5 px-2.5 py-1 font-mono text-xs text-destructive transition-colors"
                     >
                       {term}
                     </li>
@@ -300,18 +315,18 @@ export default function CustomListPage() {
           aria-hidden
           className="hidden items-center justify-center lg:flex"
         >
-          <div className="flex size-20 items-center justify-center rounded-full border bg-background text-muted-foreground shadow-sm">
+          <div className="flex size-20 items-center justify-center rounded-full border bg-background text-muted-foreground">
             <ArrowRight className="size-6" />
           </div>
         </div>
 
-        {/* ── Current list (right aside) ─────────────────────────────────── */}
+        {/* ── Custom list (right aside) ─────────────────────────────────── */}
         <aside>
           <section className="overflow-hidden rounded-xl border bg-card lg:sticky lg:top-6">
             <header className="flex items-center justify-between gap-4 border-b bg-muted/30 px-5 py-3">
               <div className="flex items-center gap-2">
                 <ListChecks className="size-4 text-muted-foreground" />
-                <h2 className="text-sm font-semibold tracking-tight">Current list</h2>
+                <h2 className="text-sm font-semibold tracking-tight">Custom list</h2>
                 <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium tabular-nums text-primary">
                   {customList.length}
                 </span>
@@ -340,7 +355,7 @@ export default function CustomListPage() {
                   {customList.map((term, i) => (
                     <li
                       key={`${term}-${i}`}
-                      className="inline-flex items-center rounded-full border bg-background px-2.5 py-1 font-mono text-xs text-foreground/80 shadow-sm transition-colors hover:border-foreground/30 hover:bg-muted/50"
+                      className="inline-flex items-center rounded-full border bg-background px-2.5 py-1 font-mono text-xs text-foreground/80 transition-colors"
                     >
                       {term}
                     </li>
