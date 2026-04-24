@@ -24,7 +24,6 @@ export function CustomListProvider({ children }: { children: React.ReactNode }) 
         if (savedCustomList) {
             try {
                 const parsedCustomList = JSON.parse(savedCustomList)
-                console.log("hello", parsedCustomList)
                 // JSON.parse returns any type so below is a type check
                 if (Array.isArray(parsedCustomList) && parsedCustomList.every((v) => typeof v === "string")) {
                     setCustomList(parsedCustomList);

@@ -8,22 +8,27 @@ import { parse } from "csv-parse/sync";
 // ---------------------------------------------------------------------------
 
 /**
- * Parses pasted text as CSV or a plain newline-separated list and returns a
- * flat array of lookup terms.
+ * Parses pasted text as CSV, TSV, or a plain newline-separated list and
+ * returns a flat array of lookup terms.
  *
  * Inputs are assumed to have NO header row. Each line may contain one term,
- * or multiple comma-separated terms; all fields across all rows are returned
- * in document order. Empty fields and surrounding whitespace are stripped.
+ * or multiple comma- or tab-separated terms; all fields across all rows are
+ * returned in document order. Empty fields and surrounding whitespace are
+ * stripped.
  */
 export function parseInput(text: string): string[] {
+    // Pick a single delimiter for the whole input: tab if any line contains
+    // one, otherwise comma. Plain newline-separated lists work with either.
+    const delimiter = text.includes('\t') ? '\t' : ',';
+
     const rows: string[][] = parse(text, {
-        delimiter: ',',
+        delimiter,
         trim: true,
         skip_empty_lines: true,
         relax_column_count: true,
     });
 
-    return rows.flatMap((x)=> x);
+    return rows.flatMap((row) => row).filter((field) => field.length > 0);
 }
   
   export function matchTerms(

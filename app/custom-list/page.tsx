@@ -77,11 +77,11 @@ export default function CustomListPage() {
 
   return (
     <div className="mr-auto w-full max-w-7xl px-6 py-8">
-      <h1 className="text-2xl font-semibold tracking-tight">Custom Accession List</h1>
+      <h1 className="text-2xl font-semibold tracking-tight">Custom Genotype List</h1>
       <p className="mt-2 text-sm text-muted-foreground">
-        Paste a list of accession names or numbers to find their records within
-        the selected crop dataset. Accepts plain line-separated lists or TSV
-        (first column is used, no header expected).
+        Paste a list of genotype IDs to find their records within the selected
+        crop dataset. Accepts plain line-separated lists, CSV, or TSV (all
+        fields are used, no header expected).
       </p>
 
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[1fr_auto_20rem]">
@@ -136,10 +136,10 @@ export default function CustomListPage() {
         <header className="flex items-center justify-between gap-4 border-b bg-muted/30 px-5 py-3">
           <div className="flex items-center gap-2">
             <ClipboardList className="size-4 text-muted-foreground" />
-            <h2 className="text-sm font-semibold tracking-tight">Accession list</h2>
+            <h2 className="text-sm font-semibold tracking-tight">Genotype IDs</h2>
           </div>
           <span className="text-xs text-muted-foreground">
-            One per line OR CSV/TSV first column
+            One per line, or CSV/TSV
           </span>
         </header>
 
@@ -155,7 +155,7 @@ export default function CustomListPage() {
                 className="w-full rounded-md border bg-background px-3 py-2 font-mono text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-50"
                 rows={8}
                 placeholder={
-                  'Paste accession names or numbers here\u2026\n\nOne per line, or TSV (first column used).\nExample:\n  WAWB0001\n  WAWB0002'
+                  'Paste genotype IDs here\u2026\n\nOne per line, or CSV/TSV (all fields are used).\nExample:\n  WAWB0001\n  WAWB0002'
                 }
                 value={inputText}
                 onChange={(e) => 
@@ -208,7 +208,7 @@ export default function CustomListPage() {
             <div className="px-5 py-4">
               {matchedRows.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
-                  No accessions matched within the {file} dataset.
+                  No genotype IDs matched within the {file} dataset.
                 </p>
               ) : (
                 <div className="overflow-x-auto">
@@ -290,8 +290,8 @@ export default function CustomListPage() {
 
               <div className="px-5 py-4">
                 <p className="mb-3 text-xs text-muted-foreground">
-                  These terms did not match any accession name or number. Check
-                  spelling or try the other field (name vs number).
+                  These terms did not match any genotype ID in the {file}{' '}
+                  dataset. Check for typos or confirm the IDs exist in this crop.
                 </p>
                 <ul className="flex flex-wrap gap-1.5">
                   {unmatchedTerms.map((term, i) => (
@@ -347,7 +347,7 @@ export default function CustomListPage() {
             <div className="max-h-[calc(100vh-8rem)] overflow-y-auto px-5 py-4">
               {customList.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
-                  No accessions yet. Paste a list and click{' '}
+                  No genotype IDs yet. Paste a list and click{' '}
                   <span className="font-medium text-foreground">Parse</span> to populate.
                 </p>
               ) : (
