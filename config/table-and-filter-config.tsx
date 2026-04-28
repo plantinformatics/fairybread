@@ -1,9 +1,7 @@
-"use client"
-
-import React from "react"
 import { Column, ColumnDef } from "@tanstack/react-table"
 import { DataGridColumnHeader } from "@/components/reui/data-grid/data-grid-column-header"
 import type { FilterFieldConfig } from "@/components/reui/filters"
+import { sampStatMapping } from "@/config/biological-status-mapping"
 
 import { 
     BookOpenText,
@@ -13,6 +11,7 @@ import {
     Landmark,
     Map,
     MapPinned,
+    Sprout,
     Tag,
     UserRound,
 } from "lucide-react"
@@ -20,7 +19,6 @@ import {
 export type PCAPassportData = {
     "accessionName": string
     "accessionNumber": string
-    "countryOfOrigin.codeNum": string
     "countryOfOrigin.name": string
     "doi": string
     "donorName": string
@@ -42,6 +40,7 @@ export type PCAPassportData = {
     "region": string
     "subRegion": string
     "taxonomy.taxonName": string
+    "sampStat": number // named value found in sampStatMapping, this may change later
 }
 
 const addSortingDropdownFn = (column: Column<PCAPassportData>, accessorKey: string) => {
@@ -180,7 +179,7 @@ export const columns: FilterableColumnDef[] = [
     {
         id: "Taxonomy",
         header: ({column}) => addSortingDropdownFn(column,"Taxonomy"),
-        accessorFn: (row) => (row as any)["taxonomy.taxonName"],
+        accessorFn: (row) => row["taxonomy.taxonName"],
         accessorKey: "taxonomy.taxonName",
         meta: {
             filter: {
@@ -203,17 +202,28 @@ export const columns: FilterableColumnDef[] = [
             },
         },
     },
-
-    // TODO: add alias column
-    // {
-    //     id: "Alias",
-    //     header: "Alias",
-    //     accessorKey: "selected",
-    //     cell: ({ getValue }) => (
-    //         <Checkbox checked={getValue() as boolean} />
-    //     )
-    // }
+    {
+        id: "Biological status",
+        header: ({column}) => addSortingDropdownFn(column,"Biological status"),
+        accessorKey: "sampStat",
+        enableGrouping: true,
+        cell: ({ getValue }) => {
+            const code = Number(getValue())
+            return sampStatMapping.get(code) ?? getValue() as string
+        },
+        meta: {
+            filter: {
+                type: "text",
+                label: "Biological status",
+                icon: <Sprout className="size-3.5" />,
+            },
+        },
+    }
 ]
+
+export const passportDataSelectFields = columns
+    .map((column) => column.accessorKey)
+    .filter((key): key is string => typeof key === "string")
 
 export const fields: FilterFieldConfig[] = columns
     .filter((column) => {

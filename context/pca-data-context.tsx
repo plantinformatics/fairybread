@@ -19,7 +19,6 @@
 
 import { createContext, useContext, useEffect, useState } from 'react';
 import { useQueryState, parseAsString } from 'nuqs';
-import { fetchPCAPassportData } from '@/lib/fetchPCAPassportData';
 import type { PCAPassportData } from '@/config/table-and-filter-config';
 
 // ---------------------------------------------------------------------------
@@ -78,21 +77,35 @@ export function PcaDataProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   // Re-run whenever `file` changes (including on first mount).
-  // The `isCancelled` flag prevents a stale fetch from overwriting state if
+  // The AbortController prevents a stale fetch from overwriting state if
   // the user switches crops before the previous request has finished.
   useEffect(() => {
-    let isCancelled = false;
+    const controller = new AbortController();
 
     async function loadData() {
       setIsLoading(true);
 
       try {
-        const data = await fetchPCAPassportData(file);
-        if (!isCancelled) {
+        const res = await fetch(
+          `/api/pca-passport-data?file=${encodeURIComponent(file)}`,
+          { signal: controller.signal },
+        );
+        if (!res.ok) {
+          const body = await res.text();
+          throw new Error(`Failed to fetch PCA passport data (${res.status}): ${body}`);
+        }
+        const data: PCAPassportData[] = await res.json();
+        if (!controller.signal.aborted) {
           setRawData(data);
         }
+      } catch (error) {
+        if ((error as Error).name === 'AbortError') return;
+        console.error('Error loading PCA passport data:', error);
+        if (!controller.signal.aborted) {
+          setRawData([]);
+        }
       } finally {
-        if (!isCancelled) {
+        if (!controller.signal.aborted) {
           setIsLoading(false);
         }
       }
@@ -100,10 +113,8 @@ export function PcaDataProvider({ children }: { children: React.ReactNode }) {
 
     loadData();
 
-    // Cleanup: if the component re-renders (e.g. file changes) before the
-    // previous fetch resolves, mark the old request as cancelled.
     return () => {
-      isCancelled = true;
+      controller.abort();
     };
   }, [file]);
 

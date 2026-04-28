@@ -1,13 +1,8 @@
-'use cache'
-
-import { cache } from 'react';
 import { unstable_cache } from 'next/cache';
 import { PCAFileInfo } from '@/config/pca-location-config';
-import { passportDataSelectFields } from '@/config/passport-data-config';
+import { passportDataSelectFields } from '@/config/table-and-filter-config';
 import chalk from 'chalk';
 import { parse } from "csv-parse/sync";
-import path from 'path';
-import fs from 'fs';
 
 import { replaceNullsWithMissing } from '@/lib/dataProcessing'
 
@@ -29,8 +24,7 @@ async function fetchAndParsePCAFile(PCAFileURL: string): Promise<any> {
   return data
 } 
 
-// Cache wrapper ensures same data isn't fetched multiple times in one render
-export const fetchPCAPassportData = cache(async (PCAFile: string) => {
+export async function fetchPCAPassportData(PCAFile: string) {
   try {
     const debug = chalk.blue;
 
@@ -122,38 +116,14 @@ export const fetchPCAPassportData = cache(async (PCAFile: string) => {
     
     console.log(debug(`All pages fetched successfully. Total items: ${allPassportData.length}`));
     
-    // Identify samples without passport data
     const passportDataGenotypeIds = new Set(allPassportData.map((item: any) => item.genotypeID));
     const missingPassportDataIds = genotypeIds.filter((id: string) => !passportDataGenotypeIds.has(id));
+    if (missingPassportDataIds.length > 0) {
+      console.log(chalk.yellow(`⚠ Samples without passport data: ${missingPassportDataIds.length} out of ${totalSamples}`));
+    } else {
+      console.log(chalk.green(`✓ All ${totalSamples} samples have passport data`));
+    }
 
-    // Output log file when missing passport data is more than 20
-
-    // commented out due to vercel deployment change
-
-    // if (missingPassportDataIds.length > 20) {
-    //   console.log(chalk.yellow(`⚠ Samples without passport data: ${missingPassportDataIds.length} out of ${totalSamples}`));
-    //   const logFolder = path.join(process.cwd(), 'src/app/data/logs')
-    //   const logFilePath = path.join(logFolder, `missing-passport-data-${PCAFile}.txt`);
-    //   console.log(chalk.yellow('Missing IDs exceed 20, logging to file' + logFilePath));
-    //   const logContent = `Missing passport data: ${missingPassportDataIds.length} out of ${totalSamples}\nMissing IDs: \n${missingPassportDataIds.join('\n')}`;
-    //   // check if folder and file exists, if not create them
-    //   if (!fs.existsSync(logFolder)) {
-    //     fs.mkdirSync(logFolder, { recursive: true });
-    //     console.log(chalk.yellow('Created log folder: ' + logFolder));
-    //   }
-    //   if (!fs.existsSync(logFilePath)) {
-    //     fs.writeFileSync(logFilePath, logContent);
-    //     console.log(chalk.yellow('Created log file: ' + logFilePath));
-    //   }
-    // } else if (missingPassportDataIds.length > 0 && missingPassportDataIds.length <= 20) {
-    //   // Output to console if missing passport data is less than 20
-    //   console.log(chalk.yellow(`⚠ Samples without passport data: ${missingPassportDataIds.length} out of ${totalSamples}`));
-    //   console.log(chalk.yellow('Missing IDs:'), missingPassportDataIds);
-    // } else {
-    //   console.log(chalk.green(`✓ All ${totalSamples} samples have passport data`));
-    // }
-    
-    // Merge PCA and passport data
     const pcaByIID = new Map(PCAData.map((p: any) => [p.IID, p]));
     const mergedData = allPassportData.flatMap((passport: any) => {
       const pca = pcaByIID.get(passport.genotypeID);
@@ -165,4 +135,4 @@ export const fetchPCAPassportData = cache(async (PCAFile: string) => {
     console.error('Error fetching PCA passport data:', error);
     throw error;
   }
-});
+}
