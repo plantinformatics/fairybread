@@ -6,9 +6,9 @@ export type PCAFileInfoEntry = {
 
 export const PCAFileInfo = new Map<string, PCAFileInfoEntry>([
     ['Barley', {
-        fileUrl: 'https://bry2ac73eslo6pzp.public.blob.vercel-storage.com/barley-pcs.tsv',
-        doiTitle: 'AGG Barley - Release 240806',
-        doiUrl: 'https://doi.org/10.7910/DVN/H6SNVM'
+        fileUrl: 'https://bry2ac73eslo6pzp.public.blob.vercel-storage.com/260430_AGG-Barley.pcs.txt',
+        doiTitle: 'AGG Barley - Release 260430',
+        doiUrl: 'https://doi.org/10.7910/DVN/LXU0WD'
     }],
     ['Wheat', {
         fileUrl: 'https://bry2ac73eslo6pzp.public.blob.vercel-storage.com/wheat-release1-pca.txt',

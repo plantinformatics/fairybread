@@ -1,7 +1,23 @@
+/**
+ * Adding a new field from the Genolink / Genesys API
+ * ---------------------------------------------------
+ * The `accessorKey` of each column is what gets sent to the Genolink API as a
+ * `select` field (see `passportDataSelectFields` at the bottom of this file,
+ * consumed by `lib/fetchPCAPassportData.ts`). To add a new column:
+ *
+ * 1. Find the field name in the Genolink/Genesys accession schema
+ *    (https://genolink.plantinformatics.io/ — nested fields use dot notation,
+ *    e.g. `countryOfOrigin.name`).
+ * 2. Add it to the `PCAPassportData` type below so it is typed end-to-end.
+ * 3. Add a new entry to the `columns` array with `accessorKey` set to the
+ *    exact API field name. Provide an `id`, `header`, and `meta.filter` config
+ *    (label + lucide icon). For nested fields also set `accessorFn` (see the
+ *    "Country of Origin" / "Taxonomy" entries as templates).
+ */
+
 import { Column, ColumnDef } from "@tanstack/react-table"
 import { DataGridColumnHeader } from "@/components/reui/data-grid/data-grid-column-header"
 import type { FilterFieldConfig } from "@/components/reui/filters"
-import { sampStatMapping } from "@/config/biological-status-mapping"
 
 import { 
     BookOpenText,
@@ -40,7 +56,7 @@ export type PCAPassportData = {
     "region": string
     "subRegion": string
     "taxonomy.taxonName": string
-    "sampStat": number // named value found in sampStatMapping, this may change later
+    "sampStat": string
 }
 
 const addSortingDropdownFn = (column: Column<PCAPassportData>, accessorKey: string) => {
@@ -207,10 +223,6 @@ export const columns: FilterableColumnDef[] = [
         header: ({column}) => addSortingDropdownFn(column,"Biological status"),
         accessorKey: "sampStat",
         enableGrouping: true,
-        cell: ({ getValue }) => {
-            const code = Number(getValue())
-            return sampStatMapping.get(code) ?? getValue() as string
-        },
         meta: {
             filter: {
                 type: "text",

@@ -132,7 +132,27 @@ The Custom List page lets a user look up a hand-picked set of accessions within 
 ## Project Notes
 
 - No local `.env` configuration is required for core usage.
-- If you add a new crop, update `config/pca-location-config.ts` with its file URL and DOI metadata.
+
+### Adding a new crop
+
+Add an entry to the `PCAFileInfo` map in `config/pca-location-config.ts`:
+
+```ts
+['<Crop Name>', {
+    fileUrl: '<URL to PCA TSV/TXT file>',
+    doiTitle: '<Dataset title shown in the UI>',
+    doiUrl: 'https://doi.org/<DOI>'
+}],
+```
+
+- The map key (e.g. `'Wheat'`) is what's used in the `?file=` URL param on `/data-explorer`.
+- `fileUrl` must point to a tab-separated PCA file with at least an `IID` column plus `PC1`–`PC10` columns (genotype IDs in `IID` are used to fetch passport metadata from Genolink).
+- Once added, the crop appears automatically in the crop selector — no other changes required.
+- Also update the **Data Sources** table above so the README reflects supported crops.
+
+### Adding a new passport field from the Genolink / Genesys API
+
+Edit `config/table-and-filter-config.tsx`: extend the `PCAPassportData` type and add a column entry whose `accessorKey` matches the API field name (dot notation for nested fields, e.g. `countryOfOrigin.name`). The `accessorKey`s are automatically forwarded to Genolink as the `select` param, rendered in the table, and exposed as filters. See the comment at the top of that file for a step-by-step.
 
 ## Acknowledgements
 FairyBread is funded by the Australian Grains Genebank (AGG) Strategic Partnership, a $30M joint investment between the Victorian State Government and the Grains Research and Development Corporation (GRDC) that aims to unlock the genetic potential of plant genetic resources for the benefit of Australian grain growers.
