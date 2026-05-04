@@ -34,6 +34,10 @@ export const chartLayout = {
       bgcolor: "rgba(255,255,255,0.8)",
       bordercolor: "#e5e7eb",
       borderwidth: 1,
+      // Keep legend marker icons a fixed size regardless of trace marker.size.
+      // Without this, scatter3d traces render tiny legend dots when marker.size
+      // is small (scatter2d legend icons are already fixed-size).
+      itemsizing: "constant" as const,
     },
     height: 500,
     margin: {

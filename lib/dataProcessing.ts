@@ -1,3 +1,5 @@
+import type { PcAxes } from '@/context/preferences-context';
+
 export function extractSortAndFilter(PCAPassportData: any[], groupingValue: string, numberOfEntries: number) {
     const groupedPCAPassport = Object.groupBy(PCAPassportData, (p: any) => p[groupingValue]);
     // extract null entries
@@ -13,7 +15,12 @@ export function extractSortAndFilter(PCAPassportData: any[], groupingValue: stri
     return [...top, ["Other", rest], ["N/A", missing]];
   }
   
-export function createPlotData(groupedData: any[], groupingValue: string) {
+export function createPlotData(
+  groupedData: any[],
+  groupingValue: string,
+  pcAxes: PcAxes,
+) {
+    const { x: pcx, y: pcy, z: pcz } = pcAxes;
     // This is the only way to ensure that the Selected group is drawn on the top
     // Z order manipulation is only supported in scatter not scattergl type
     // See https://github.com/plotly/plotly.js/pull/6918
@@ -22,8 +29,9 @@ export function createPlotData(groupedData: any[], groupingValue: string) {
     )
     return entries.map(([key, value]: any) => {
       return {
-        x: value.map((p: any) => p.pca.PC1),
-        y: value.map((p: any) => p.pca.PC2),
+        x: value.map((p: any) => p.pca[pcx]),
+        y: value.map((p: any) => p.pca[pcy]),
+        ...(pcz && { z: value.map((p: any) => p.pca[pcz]) }),
         text: value.map((p: any) => p.pca.IID),
         customdata: value.map((p: any) => [
           p.accessionName,
@@ -32,13 +40,15 @@ export function createPlotData(groupedData: any[], groupingValue: string) {
         name: (key.length < 20 ? key : key.substring(0, 17) + "...") + " (" + value.length + ")",
         opacity: key === "Selected" ? 1 : 0.7,
         mode: "markers",
-        type: "scattergl",
-        hovertemplate: 
+        type: pcz ? "scatter3d" : "scatter",
+        marker: pcz ? { size: 3 } : { size: 5 },
+        hovertemplate:
         "<u><b>%{text}</b></u><br>" +
-        "<b>Accession Name:</b> %{customdata[0]}<br>" + 
-        "<b>PC1:</b> %{x:.2f}<br>" + 
-        "<b>PC2:</b> %{y:.2f}<br>" + 
-        "<b>" + groupingValue + ":</b> %{customdata[1]}<br>" + // need to refactor this to reference the name, rather than what is used in the API call
+        "<b>Accession Name:</b> %{customdata[0]}<br>" +
+        `<b>${pcx}:</b> %{x:.2f}<br>` +
+        `<b>${pcy}:</b> %{y:.2f}<br>` +
+        (pcz ? `<b>${pcz}:</b> %{z:.2f}<br>` : "") +
+        `<b>${groupingValue}:</b> %{customdata[1]}<br>` + // need to refactor this to reference the name, rather than what is used in the API call
         "<extra></extra>",
       }
     })

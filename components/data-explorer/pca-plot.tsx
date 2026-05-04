@@ -6,6 +6,7 @@ import { extractSortAndFilter, createPlotData } from "@/lib/dataProcessing";
 import { chartConfig, buildChartLayout } from "@/config/chart-config";
 import type { PCAPassportData } from "@/config/table-and-filter-config";
 import { LoadingOverlay } from "@/components/data-explorer/pca-plot-loading-overlay";
+import { usePreferences } from "@/context/preferences-context";
 
 const Plot = dynamic(() => import("react-plotly.js"), {
   ssr: false,
@@ -39,6 +40,7 @@ export function PcaPlot({
   const isSelectionBoundRef = useRef<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
   const [data, setData] = useState<any[]>([]);
+  const { pcAxes } = usePreferences();
 
   useEffect(()=>{
     setLoading(true);
@@ -47,15 +49,15 @@ export function PcaPlot({
       const groupedData = Object.groupBy(
       rawData, 
       item => tableFilteredSet.has(item.genotypeID) ? "Match" : "Not Match")
-      const textFilteredData = createPlotData(Object.entries(groupedData), groupBy)
+      const textFilteredData = createPlotData(Object.entries(groupedData), groupBy, pcAxes)
       setData(textFilteredData)
     } else {
       const sortedEntries = extractSortAndFilter(rawData, groupBy, 15);
-      const groupedPlotData = createPlotData(sortedEntries, groupBy);
+      const groupedPlotData = createPlotData(sortedEntries, groupBy, pcAxes);
       setData(groupedPlotData)
     }
     setLoading(false);
-  }, [rawData, groupBy, tableFiltered])
+  }, [rawData, groupBy, tableFiltered, pcAxes])
 
 
   // Used because dark mode needs to be an explicit theme change for plotly
