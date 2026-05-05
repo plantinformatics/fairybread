@@ -40,7 +40,7 @@ export function createPlotData(
         name: (key.length < 20 ? key : key.substring(0, 17) + "...") + " (" + value.length + ")",
         opacity: key === "Selected" ? 1 : 0.7,
         mode: "markers",
-        type: pcz ? "scatter3d" : "scatter",
+        type: pcz ? "scatter3d" : "scattergl",
         marker: pcz ? { size: 3 } : { size: 5 },
         hovertemplate:
         "<u><b>%{text}</b></u><br>" +
