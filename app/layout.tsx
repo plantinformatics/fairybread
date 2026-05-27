@@ -10,6 +10,7 @@ import { NuqsAdapter } from 'nuqs/adapters/next/app'
 import { PcaDataProvider } from "@/context/pca-data-context"
 import { PreferencesProvider } from "@/context/preferences-context";
 import { CustomListProvider } from "@/context/custom-list-context";
+import { Analytics } from '@vercel/analytics/next';
 import "./globals.css";
 
 import BreadCrumbNav from "@/components/bread-crumb-nav"
@@ -96,6 +97,7 @@ export default function RootLayout({
             </ThemeProvider>
           </Suspense>
         </NuqsAdapter>
+        <Analytics />
       </body>
     </html>
   );
