@@ -11,9 +11,9 @@ export const PCAFileInfo = new Map<string, PCAFileInfoEntry>([
         doiUrl: 'https://doi.org/10.7910/DVN/LXU0WD'
     }],
     ['Wheat', {
-        fileUrl: 'https://bry2ac73eslo6pzp.public.blob.vercel-storage.com/wheat-release1-pca.txt',
-        doiTitle: 'AGG Wheat - Release 240806',
-        doiUrl: 'https://doi.org/10.7910/DVN/CRSI0B'
+        fileUrl: 'https://bry2ac73eslo6pzp.public.blob.vercel-storage.com/AGG-Wheat-Release-260619_pcs.txt',
+        doiTitle: 'AGG Wheat - Release 260619',
+        doiUrl: 'https://doi.org/10.7910/DVN/MOBTA8'
     }],
     ['Lentil', {
         fileUrl: 'https://bry2ac73eslo6pzp.public.blob.vercel-storage.com/lentil-pcs.txt',
