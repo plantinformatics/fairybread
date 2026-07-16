@@ -30,7 +30,7 @@ import { usePcaData } from "@/context/pca-data-context"
 
 // Serializer for all shared URL params. Add new ones here and they'll
 // automatically be preserved on any navigation item that has preserveParams: true.
-const serialize = createSerializer({ file: parseAsString, groupBy: parseAsString })
+const serialize = createSerializer({ file: parseAsString, subset: parseAsString, groupBy: parseAsString })
 
 type SidebarNavItem = {
   title: string
@@ -104,7 +104,7 @@ const items: SidebarNavItem[] = [
 ]
 
 export function AppSidebar() {
-  const { file } = usePcaData()
+  const { file, subset } = usePcaData()
   const [groupBy] = useQueryState("groupBy", parseAsString.withDefault("subRegion"))
 
   return (
@@ -117,7 +117,7 @@ export function AppSidebar() {
                 // Default is to preserve shared params; set preserveParams: false
                 // on items (like Settings) that don't need them.
                 const href = item.preserveParams !== false
-                  ? serialize(item.url, { file, groupBy })
+                  ? serialize(item.url, { file, subset, groupBy })
                   : item.url
 
                 return (

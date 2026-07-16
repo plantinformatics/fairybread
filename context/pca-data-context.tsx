@@ -20,6 +20,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { useQueryState, parseAsString } from 'nuqs';
 import type { PCAPassportData } from '@/config/table-and-filter-config';
+import { ORIGINAL_SUBSET } from '@/config/pca-location-config';
 
 // ---------------------------------------------------------------------------
 // Shape of the value stored in the context
@@ -33,7 +34,11 @@ interface PcaDataContextValue {
   file: string;
   /** Update the selected crop. The URL query param is updated automatically. */
   setFile: (f: string) => void;
-  /** The full loaded dataset for the selected crop. Empty array while loading. */
+  /** The currently selected subset key (e.g. "Original"). Synced to ?subset= in the URL. */
+  subset: string;
+  /** Update the selected subset. The URL query param is updated automatically. */
+  setSubset: (s: string) => void;
+  /** The full loaded dataset for the selected crop/subset. Empty array while loading. */
   rawData: PCAPassportData[];
   /** True while the fetch request is in-flight. Use this to show spinners/skeletons. */
   isLoading: boolean;
@@ -59,26 +64,30 @@ const PcaDataContext = createContext<PcaDataContextValue | undefined>(undefined)
  * PCA data available to all children.
  *
  * It is responsible for:
- *  1. Owning the `file` query-param state via nuqs.
- *  2. Fetching (and re-fetching when `file` changes) via `fetchPCAPassportData`.
- *  3. Exposing `{ file, setFile, rawData, isLoading }` to any descendant that
- *     calls `usePcaData()`.
+ *  1. Owning the `file` and `subset` query-param state via nuqs.
+ *  2. Fetching (and re-fetching when `file` or `subset` changes) via
+ *     `fetchPCAPassportData`.
+ *  3. Exposing `{ file, setFile, subset, setSubset, rawData, isLoading }` to
+ *     any descendant that calls `usePcaData()`.
  */
 export function PcaDataProvider({ children }: { children: React.ReactNode }) {
   // Keep the selected crop in the URL (?file=Wheat) so it survives page refresh
   // and can be bookmarked. nuqs keeps this in sync with React state for us.
   const [file, setQueryFile] = useQueryState('file', parseAsString.withDefault('Wheat'));
+  // Keep the selected subset in the URL (?subset=Original) alongside `file`.
+  const [subset, setQuerySubset] = useQueryState('subset', parseAsString.withDefault(ORIGINAL_SUBSET));
 
-  // Wrap the nuqs setter so callers only need to pass a string — the underlying
+  // Wrap the nuqs setters so callers only need to pass a string — the underlying
   // nuqs setter also accepts null (to clear), but we hide that complexity here.
   const setFile = (f: string) => setQueryFile(f);
+  const setSubset = (s: string) => setQuerySubset(s);
 
   const [rawData, setRawData] = useState<PCAPassportData[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // Re-run whenever `file` changes (including on first mount).
+  // Re-run whenever `file` or `subset` changes (including on first mount).
   // The AbortController prevents a stale fetch from overwriting state if
-  // the user switches crops before the previous request has finished.
+  // the user switches crops/subsets before the previous request has finished.
   useEffect(() => {
     const controller = new AbortController();
 
@@ -87,7 +96,7 @@ export function PcaDataProvider({ children }: { children: React.ReactNode }) {
 
       try {
         const res = await fetch(
-          `/api/pca-passport-data?file=${encodeURIComponent(file)}`,
+          `/api/pca-passport-data?file=${encodeURIComponent(file)}&subset=${encodeURIComponent(subset)}`,
           { signal: controller.signal },
         );
         if (!res.ok) {
@@ -116,10 +125,10 @@ export function PcaDataProvider({ children }: { children: React.ReactNode }) {
     return () => {
       controller.abort();
     };
-  }, [file]);
+  }, [file, subset]);
 
   return (
-    <PcaDataContext.Provider value={{ file, setFile, rawData, isLoading }}>
+    <PcaDataContext.Provider value={{ file, setFile, subset, setSubset, rawData, isLoading }}>
       {children}
     </PcaDataContext.Provider>
   );
@@ -133,7 +142,7 @@ export function PcaDataProvider({ children }: { children: React.ReactNode }) {
  * Call this hook in any client component to access the shared PCA data.
  *
  * @example
- * const { file, setFile, rawData, isLoading } = usePcaData();
+ * const { file, setFile, subset, setSubset, rawData, isLoading } = usePcaData();
  *
  * @throws If called outside of a `<PcaDataProvider>` tree.
  */

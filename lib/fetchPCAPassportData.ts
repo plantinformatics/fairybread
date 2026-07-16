@@ -1,5 +1,5 @@
 import { unstable_cache } from 'next/cache';
-import { PCAFileInfo } from '@/config/pca-location-config';
+import { ORIGINAL_SUBSET, getDatasetInfo } from '@/config/pca-location-config';
 import { passportDataSelectFields } from '@/config/table-and-filter-config';
 import chalk from 'chalk';
 import { parse } from "csv-parse/sync";
@@ -24,14 +24,14 @@ async function fetchAndParsePCAFile(PCAFileURL: string): Promise<any> {
   return data
 } 
 
-export async function fetchPCAPassportData(PCAFile: string) {
+export async function fetchPCAPassportData(PCAFile: string, subset: string = ORIGINAL_SUBSET) {
   try {
     const debug = chalk.blue;
 
     // Fetch PCA data
-    console.log(debug('Fetching PCA passport data for:'), PCAFile);
+    console.log(debug('Fetching PCA passport data for:'), PCAFile, subset);
     
-    const fileInfo = PCAFileInfo.get(PCAFile);
+    const fileInfo = getDatasetInfo(PCAFile, subset);
     if (!fileInfo) {
       throw new Error('Invalid PCA file');
     }
@@ -87,10 +87,10 @@ export async function fetchPCAPassportData(PCAFile: string) {
           
           return await response.json();
         },
-        [`passport-data-${PCAFile}-page-${pageNumber}`],
+        [`passport-data-${PCAFile}-${subset}-page-${pageNumber}`],
         {
           revalidate: cacheTimeoutSeconds,
-          tags: [`passport-data`, `passport-data-${PCAFile}`]
+          tags: [`passport-data`, `passport-data-${PCAFile}`, `passport-data-${PCAFile}-${subset}`]
         }
       );
       

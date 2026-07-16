@@ -139,16 +139,37 @@ Add an entry to the `PCAFileInfo` map in `config/pca-location-config.ts`:
 
 ```ts
 ['<Crop Name>', {
-    fileUrl: '<URL to PCA TSV/TXT file>',
-    doiTitle: '<Dataset title shown in the UI>',
-    doiUrl: 'https://doi.org/<DOI>'
+    original: {
+        fileUrl: '<URL to PCA TSV/TXT file>',
+        doiTitle: '<Dataset title shown in the UI>',
+        doiUrl: 'https://doi.org/<DOI>'
+    },
 }],
 ```
 
 - The map key (e.g. `'Wheat'`) is what's used in the `?file=` URL param on `/data-explorer`.
-- `fileUrl` must point to a tab-separated PCA file with at least an `IID` column plus `PC1`–`PC10` columns (genotype IDs in `IID` are used to fetch passport metadata from Genolink).
+- `original.fileUrl` must point to a tab-separated PCA file with at least an `IID` column plus `PC1`–`PC10` columns (genotype IDs in `IID` are used to fetch passport metadata from Genolink).
 - Once added, the crop appears automatically in the crop selector — no other changes required.
 - Also update the **Data Sources** table above so the README reflects supported crops.
+
+### Adding a subset
+
+Each crop can have any number of subsets — e.g. a filtered/regional cut of the full PCA file. Add them under the crop's `subsets` map:
+
+```ts
+['<Crop Name>', {
+    original: { fileUrl: '...', doiTitle: '...', doiUrl: '...' },
+    subsets: {
+        '<Subset Name>': {
+            fileUrl: '<URL to the subset PCA TSV/TXT file>',
+            // doiTitle/doiUrl are optional — omit to inherit from `original`.
+        },
+    },
+}],
+```
+
+- The subset key (e.g. `'<Subset Name>'`) is what's used in the `?subset=` URL param, and is what appears in the subset dropdown next to the crop dropdown in the breadcrumb (`"Original"` is always the first option and needs no config).
+- Subsets are scoped per crop — switching crop while on a subset name that doesn't exist for the new crop silently falls back to `"Original"` data (the dropdown just won't show that name as an option for the new crop).
 
 ### Adding a new passport field from the Genolink / Genesys API
 

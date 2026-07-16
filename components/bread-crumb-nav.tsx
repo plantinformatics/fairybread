@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronDown, FileText, Sprout, SquareArrowOutUpRight } from "lucide-react"
+import { ChevronDown, FileText, Layers, Sprout, SquareArrowOutUpRight } from "lucide-react"
 import { parseAsString, useQueryState } from "nuqs";
 import {
   Breadcrumb,
@@ -15,12 +15,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { PCAFileInfo } from "@/config/pca-location-config";
+import { ORIGINAL_SUBSET, PCAFileInfo, getDatasetInfo, getSubsetNames } from "@/config/pca-location-config";
 
 export default function BreadCrumbNav() {
   const cropOptions = Array.from(PCAFileInfo.keys());
   const [selectedCrop, setSelectedCrop] = useQueryState("file", parseAsString.withDefault("Wheat"));
-  const selectedFileInfo = PCAFileInfo.get(selectedCrop ?? "Wheat") ?? PCAFileInfo.get("Wheat");
+  const [selectedSubset, setSelectedSubset] = useQueryState("subset", parseAsString.withDefault(ORIGINAL_SUBSET));
+  const subsetOptions = getSubsetNames(selectedCrop ?? "Wheat");
+  const selectedFileInfo = getDatasetInfo(selectedCrop ?? "Wheat", selectedSubset ?? ORIGINAL_SUBSET)
+    ?? getDatasetInfo("Wheat", ORIGINAL_SUBSET);
 
   return (
     <Breadcrumb>
@@ -72,6 +75,32 @@ export default function BreadCrumbNav() {
             <span className="truncate">{selectedFileInfo?.doiTitle ?? "DOI"}</span>
             <SquareArrowOutUpRight className="size-4 shrink-0" />
           </BreadcrumbLink>
+        </BreadcrumbItem>
+        <BreadcrumbSeparator />
+        <BreadcrumbItem>
+          <DropdownMenu>
+            <DropdownMenuTrigger className="flex items-center">
+              <span className="inline-flex h-8 min-w-30 items-center gap-1.5 rounded-md border bg-background px-2 text-sm shadow-xs hover:bg-muted/60">
+                <Layers className="size-3.5 text-muted-foreground" />
+                <span className="flex-1 text-left font-medium text-foreground">
+                  {selectedSubset || ORIGINAL_SUBSET}
+                </span>
+                <ChevronDown className="size-3.5 shrink-0" />
+              </span>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              {subsetOptions.map((subset) => (
+                <DropdownMenuItem
+                  key={subset}
+                  onClick={() => {
+                    void setSelectedSubset(subset);
+                  }}
+                >
+                  {subset}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </BreadcrumbItem>
       </BreadcrumbList>
     </Breadcrumb>

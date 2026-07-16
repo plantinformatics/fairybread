@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import type { PCAPassportData } from '@/config/table-and-filter-config';
-import { PCAFileInfo } from '@/config/pca-location-config';
+import { PCAFileInfo, getDatasetInfo } from '@/config/pca-location-config';
 import { usePcaData } from '@/context/pca-data-context';
 import { Button } from '@/components/ui/button';
 import {
@@ -37,7 +37,7 @@ export default function CustomListPage() {
   // `file`, `rawData`, and `isLoading` all come from the shared context —
   // no local fetch needed here. Changing `file` here will trigger a re-fetch
   // in the provider and update all pages simultaneously.
-  const { file, setFile, rawData, isLoading } = usePcaData();
+  const { file, setFile, subset, rawData, isLoading } = usePcaData();
   const { customList, setCustomList} = useCustomList();
 
   // matchedRows and unmatchedTerms are the parsed results; they are NOT
@@ -96,14 +96,14 @@ export default function CustomListPage() {
           </div>
           <span className="text-xs text-muted-foreground">
             Dataset:{' '}
-            {file && PCAFileInfo.get(file) ? (
+            {file && getDatasetInfo(file, subset) ? (
               <a
-                href={PCAFileInfo.get(file)!.doiUrl}
+                href={getDatasetInfo(file, subset)!.doiUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="font-medium text-foreground underline-offset-4 hover:underline"
               >
-                {PCAFileInfo.get(file)!.doiTitle}
+                {getDatasetInfo(file, subset)!.doiTitle}
               </a>
             ) : (
               <span className="font-medium text-foreground">—</span>
