@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fetchPCAPassportData } from '@/lib/fetchPCAPassportData';
-import { ORIGINAL_SUBSET } from '@/config/pca-location-config';
+import { ALL_ACCESSIONS_SUBSET } from '@/config/pca-location-config';
 
 export async function GET(request: NextRequest) {
   const file = request.nextUrl.searchParams.get('file');
-  const subset = request.nextUrl.searchParams.get('subset') ?? ORIGINAL_SUBSET;
+  const subset = request.nextUrl.searchParams.get('subset') ?? ALL_ACCESSIONS_SUBSET;
 
   if (!file) {
     return NextResponse.json(

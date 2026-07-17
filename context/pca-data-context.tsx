@@ -20,7 +20,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { useQueryState, parseAsString } from 'nuqs';
 import type { PCAPassportData } from '@/config/table-and-filter-config';
-import { ORIGINAL_SUBSET } from '@/config/pca-location-config';
+import { ALL_ACCESSIONS_SUBSET } from '@/config/pca-location-config';
 
 // ---------------------------------------------------------------------------
 // Shape of the value stored in the context
@@ -34,7 +34,7 @@ interface PcaDataContextValue {
   file: string;
   /** Update the selected crop. The URL query param is updated automatically. */
   setFile: (f: string) => void;
-  /** The currently selected subset key (e.g. "Original"). Synced to ?subset= in the URL. */
+  /** The currently selected subset key (e.g. "All Accessions"). Synced to ?subset= in the URL. */
   subset: string;
   /** Update the selected subset. The URL query param is updated automatically. */
   setSubset: (s: string) => void;
@@ -79,17 +79,17 @@ export function PcaDataProvider({ children }: { children: React.ReactNode }) {
     'file',
     parseAsString.withDefault('Wheat').withOptions({ clearOnDefault: false }),
   );
-  // Keep the selected subset in the URL (?subset=Original) alongside `file`.
-  const [subset, setQuerySubset] = useQueryState('subset', parseAsString.withDefault(ORIGINAL_SUBSET));
+  // Keep the selected subset in the URL (?subset=All%20Accessions) alongside `file`.
+  const [subset, setQuerySubset] = useQueryState('subset', parseAsString.withDefault(ALL_ACCESSIONS_SUBSET));
 
   // Wrap the nuqs setters so callers only need to pass a string — the underlying
   // nuqs setter also accepts null (to clear), but we hide that complexity here.
   // Subsets are crop-specific, so switching crop always resets the subset
-  // selection back to "Original" — a subset name from one crop is meaningless
+  // selection back to "All Accessions" — a subset name from one crop is meaningless
   // (or could silently mismatch) for another.
   const setFile = (f: string) => {
     setQueryFile(f);
-    setQuerySubset(ORIGINAL_SUBSET);
+    setQuerySubset(ALL_ACCESSIONS_SUBSET);
   };
   const setSubset = (s: string) => setQuerySubset(s);
 

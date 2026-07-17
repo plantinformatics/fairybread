@@ -1,5 +1,5 @@
 import { unstable_cache } from 'next/cache';
-import { ORIGINAL_SUBSET, getDatasetInfo } from '@/config/pca-location-config';
+import { ALL_ACCESSIONS_SUBSET, getDatasetInfo } from '@/config/pca-location-config';
 import { passportDataSelectFields } from '@/config/table-and-filter-config';
 import chalk from 'chalk';
 import { parse } from "csv-parse/sync";
@@ -24,7 +24,7 @@ async function fetchAndParsePCAFile(PCAFileURL: string): Promise<any> {
   return data
 } 
 
-export async function fetchPCAPassportData(PCAFile: string, subset: string = ORIGINAL_SUBSET) {
+export async function fetchPCAPassportData(PCAFile: string, subset: string = ALL_ACCESSIONS_SUBSET) {
   try {
     const debug = chalk.blue;
 

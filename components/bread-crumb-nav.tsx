@@ -14,7 +14,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { ORIGINAL_SUBSET, PCAFileInfo, getDatasetInfo, getSubsetNames } from "@/config/pca-location-config";
+import { ALL_ACCESSIONS_SUBSET, PCAFileInfo, getDatasetInfo, getSubsetNames } from "@/config/pca-location-config";
 import { usePcaData } from "@/context/pca-data-context";
 
 export default function BreadCrumbNav() {
@@ -28,8 +28,8 @@ export default function BreadCrumbNav() {
     setSubset: setSelectedSubset,
   } = usePcaData();
   const subsetOptions = getSubsetNames(selectedCrop ?? "Wheat");
-  const selectedFileInfo = getDatasetInfo(selectedCrop ?? "Wheat", selectedSubset ?? ORIGINAL_SUBSET)
-    ?? getDatasetInfo("Wheat", ORIGINAL_SUBSET);
+  const selectedFileInfo = getDatasetInfo(selectedCrop ?? "Wheat", selectedSubset ?? ALL_ACCESSIONS_SUBSET)
+    ?? getDatasetInfo("Wheat", ALL_ACCESSIONS_SUBSET);
 
   return (
     <Breadcrumb>
@@ -89,7 +89,7 @@ export default function BreadCrumbNav() {
               <span className="inline-flex h-8 min-w-30 items-center gap-1.5 rounded-md border bg-background px-2 text-sm shadow-xs hover:bg-muted/60">
                 <Layers className="size-3.5 text-muted-foreground" />
                 <span className="flex-1 text-left font-medium text-foreground">
-                  {selectedSubset || ORIGINAL_SUBSET}
+                  {selectedSubset || ALL_ACCESSIONS_SUBSET}
                 </span>
                 <ChevronDown className="size-3.5 shrink-0" />
               </span>

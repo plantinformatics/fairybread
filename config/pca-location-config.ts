@@ -4,27 +4,27 @@ export type PCADatasetInfo = {
     doiUrl: string;
 };
 
-// Subsets can omit doiTitle/doiUrl to inherit the citation from the crop's `original` entry.
+// Subsets can omit doiTitle/doiUrl to inherit the citation from the crop's `allAccessions` entry.
 type PCASubsetInfo = Pick<PCADatasetInfo, 'fileUrl'> & Partial<Pick<PCADatasetInfo, 'doiTitle' | 'doiUrl'>>;
 
 export type PCACropConfig = {
-    original: PCADatasetInfo;
+    allAccessions: PCADatasetInfo;
     subsets?: Record<string, PCASubsetInfo>;
 };
 
 // Key used in the `?subset=` URL param and dropdown to mean "the full, unfiltered dataset".
-export const ORIGINAL_SUBSET = 'Original';
+export const ALL_ACCESSIONS_SUBSET = 'All Accessions';
 
 export const PCAFileInfo = new Map<string, PCACropConfig>([
     ['Barley', {
-        original: {
+        allAccessions: {
             fileUrl: 'https://bry2ac73eslo6pzp.public.blob.vercel-storage.com/260430_AGG-Barley.pcs.txt',
             doiTitle: 'AGG Barley - Release 260430',
             doiUrl: 'https://doi.org/10.7910/DVN/LXU0WD'
         },
     }],
     ['Wheat', {
-        original: {
+        allAccessions: {
             fileUrl: 'https://bry2ac73eslo6pzp.public.blob.vercel-storage.com/AGG-Wheat-Release-260619_pcs.txt',
             doiTitle: 'AGG Wheat - Release 260619',
             doiUrl: 'https://doi.org/10.7910/DVN/MOBTA8'
@@ -36,28 +36,28 @@ export const PCAFileInfo = new Map<string, PCACropConfig>([
         },
     }],
     ['Lentil', {
-        original: {
+        allAccessions: {
             fileUrl: 'https://bry2ac73eslo6pzp.public.blob.vercel-storage.com/lentil-pcs.txt',
             doiTitle: 'AGG Lentil - Release 250228',
             doiUrl: 'https://doi.org/10.7910/DVN/T0TDAS'
         },
     }],
     ['Field Pea', {
-        original: {
+        allAccessions: {
             fileUrl: 'https://bry2ac73eslo6pzp.public.blob.vercel-storage.com/fieldpea-pcs.txt',
             doiTitle: 'AGG Field pea - Release 250801',
             doiUrl: 'https://doi.org/10.7910/DVN/A6WGYS'
         },
     }],
     ['Chickpea', {
-        original: {
+        allAccessions: {
             fileUrl: 'https://bry2ac73eslo6pzp.public.blob.vercel-storage.com/chickpea-pcs.txt',
             doiTitle: 'AGG Chickpea - Release 250505',
             doiUrl: 'https://doi.org/10.7910/DVN/ECQ4NC'
         },
     }],
     ['Lupin', {
-        original: {
+        allAccessions: {
             fileUrl: 'https://bry2ac73eslo6pzp.public.blob.vercel-storage.com/lupin-pcs.txt',
             doiTitle: 'AGG Lupin - Release 251113',
             doiUrl: 'https://doi.org/10.7910/DVN/FVTFIL'
@@ -66,31 +66,31 @@ export const PCAFileInfo = new Map<string, PCACropConfig>([
 ]);
 
 /**
- * All selectable subset names for a crop, always starting with `ORIGINAL_SUBSET`
+ * All selectable subset names for a crop, always starting with `ALL_ACCESSIONS_SUBSET`
  * followed by any configured subsets (in declaration order).
  */
 export function getSubsetNames(crop: string): string[] {
     const cropConfig = PCAFileInfo.get(crop);
-    return [ORIGINAL_SUBSET, ...Object.keys(cropConfig?.subsets ?? {})];
+    return [ALL_ACCESSIONS_SUBSET, ...Object.keys(cropConfig?.subsets ?? {})];
 }
 
 /**
  * Resolves the fileUrl/doiTitle/doiUrl to use for a given crop + subset.
- * Falls back to the crop's `original` entry if the crop is unknown or doesn't
+ * Falls back to the crop's `allAccessions` entry if the crop is unknown or doesn't
  * have the requested subset (e.g. after switching crops), and subsets inherit
- * doiTitle/doiUrl from `original` when not explicitly overridden.
+ * doiTitle/doiUrl from `allAccessions` when not explicitly overridden.
  */
 export function getDatasetInfo(crop: string, subset: string): PCADatasetInfo | undefined {
     const cropConfig = PCAFileInfo.get(crop);
     if (!cropConfig) return undefined;
-    if (subset === ORIGINAL_SUBSET) return cropConfig.original;
+    if (subset === ALL_ACCESSIONS_SUBSET) return cropConfig.allAccessions;
 
     const subsetInfo = cropConfig.subsets?.[subset];
-    if (!subsetInfo) return cropConfig.original;
+    if (!subsetInfo) return cropConfig.allAccessions;
 
     return {
         fileUrl: subsetInfo.fileUrl,
-        doiTitle: subsetInfo.doiTitle ?? cropConfig.original.doiTitle,
-        doiUrl: subsetInfo.doiUrl ?? cropConfig.original.doiUrl,
+        doiTitle: subsetInfo.doiTitle ?? cropConfig.allAccessions.doiTitle,
+        doiUrl: subsetInfo.doiUrl ?? cropConfig.allAccessions.doiUrl,
     };
 }
