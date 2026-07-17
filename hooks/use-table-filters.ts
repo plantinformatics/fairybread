@@ -11,13 +11,34 @@ interface UseTableFiltersOptions<TRow extends Record<string, unknown>> {
   onFiltersChange?: (filters: Filter[]) => void
 }
 
+const defaultOperatorFor = (field: FilterFieldConfig | undefined): string =>
+  field?.defaultOperator || (field?.type === "multiselect" ? "is_any_of" : "is")
+
+// Rebuilds the `Filter[]` shape the UI expects from the raw `field -> values`
+// map nuqs restores from the URL. Operators aren't persisted in the URL (only
+// values are), so restored filters fall back to each field's default operator.
+// IDs are derived from the field key rather than `createFilter`'s time/random
+// id, so the same URL always produces the same id on both the server render
+// pass and the client hydration pass.
+const filtersFromQueryStates = (
+  queryStates: Record<string, string[] | null>,
+  fieldsMap: Record<string, FilterFieldConfig>
+): Filter[] =>
+  Object.entries(queryStates)
+    .filter(([, values]) => Boolean(values && values.length > 0))
+    .map(([field, values]) => ({
+      id: `url:${field}`,
+      field,
+      operator: defaultOperatorFor(fieldsMap[field]),
+      values: values ?? [],
+    }))
+
 export function useTableFilters<TRow extends Record<string, unknown>>({
   tableData,
   fields,
   debounceMs = 250,
   onFiltersChange,
 }: UseTableFiltersOptions<TRow>) {
-  const [filters, setFilters] = useState<Filter[]>([])
   const urlDebounceRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
@@ -46,6 +67,12 @@ export function useTableFilters<TRow extends Record<string, unknown>>({
     })
     return map
   }, [fields])
+
+  // Restore any filters already present in the URL (e.g. a shared link, or a
+  // refresh) on first render, instead of only reflecting them in the URL.
+  const [filters, setFilters] = useState<Filter[]>(() =>
+    filtersFromQueryStates(queryStates, fieldsMap)
+  )
 
   const filteredData = useMemo(() => {
     // Remap filter.field to the field's dataKey (if provided) so the engine

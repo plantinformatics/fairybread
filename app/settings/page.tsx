@@ -157,15 +157,6 @@ export default function SettingsPage() {
           </div>
         )}
       </div>
-
-      <div className="mt-6">
-        <Link
-          href="/data-explorer"
-          className="text-sm font-medium text-primary underline-offset-4 hover:underline"
-        >
-          Open Data Explorer with this palette
-        </Link>
-      </div>
     </div>
   );
 }
