@@ -1,7 +1,6 @@
 'use client';
 
 import { ChevronDown, FileText, Layers, Sprout, SquareArrowOutUpRight } from "lucide-react"
-import { parseAsString, useQueryState } from "nuqs";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -16,11 +15,18 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { ORIGINAL_SUBSET, PCAFileInfo, getDatasetInfo, getSubsetNames } from "@/config/pca-location-config";
+import { usePcaData } from "@/context/pca-data-context";
 
 export default function BreadCrumbNav() {
   const cropOptions = Array.from(PCAFileInfo.keys());
-  const [selectedCrop, setSelectedCrop] = useQueryState("file", parseAsString.withDefault("Wheat"));
-  const [selectedSubset, setSelectedSubset] = useQueryState("subset", parseAsString.withDefault(ORIGINAL_SUBSET));
+  // Reads/writes go through the shared context so that switching crop here
+  // resets the subset selection everywhere (see `setFile` in the provider).
+  const {
+    file: selectedCrop,
+    setFile: setSelectedCrop,
+    subset: selectedSubset,
+    setSubset: setSelectedSubset,
+  } = usePcaData();
   const subsetOptions = getSubsetNames(selectedCrop ?? "Wheat");
   const selectedFileInfo = getDatasetInfo(selectedCrop ?? "Wheat", selectedSubset ?? ORIGINAL_SUBSET)
     ?? getDatasetInfo("Wheat", ORIGINAL_SUBSET);

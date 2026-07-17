@@ -73,13 +73,24 @@ const PcaDataContext = createContext<PcaDataContextValue | undefined>(undefined)
 export function PcaDataProvider({ children }: { children: React.ReactNode }) {
   // Keep the selected crop in the URL (?file=Wheat) so it survives page refresh
   // and can be bookmarked. nuqs keeps this in sync with React state for us.
-  const [file, setQueryFile] = useQueryState('file', parseAsString.withDefault('Wheat'));
+  // `clearOnDefault: false` keeps `file` in the URL even when it's the default
+  // ("Wheat"), so shared/bookmarked links always show which crop is selected.
+  const [file, setQueryFile] = useQueryState(
+    'file',
+    parseAsString.withDefault('Wheat').withOptions({ clearOnDefault: false }),
+  );
   // Keep the selected subset in the URL (?subset=Original) alongside `file`.
   const [subset, setQuerySubset] = useQueryState('subset', parseAsString.withDefault(ORIGINAL_SUBSET));
 
   // Wrap the nuqs setters so callers only need to pass a string — the underlying
   // nuqs setter also accepts null (to clear), but we hide that complexity here.
-  const setFile = (f: string) => setQueryFile(f);
+  // Subsets are crop-specific, so switching crop always resets the subset
+  // selection back to "Original" — a subset name from one crop is meaningless
+  // (or could silently mismatch) for another.
+  const setFile = (f: string) => {
+    setQueryFile(f);
+    setQuerySubset(ORIGINAL_SUBSET);
+  };
   const setSubset = (s: string) => setQuerySubset(s);
 
   const [rawData, setRawData] = useState<PCAPassportData[]>([]);
