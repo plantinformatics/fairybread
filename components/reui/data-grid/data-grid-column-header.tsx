@@ -1,6 +1,7 @@
 "use client"
 
 import { HTMLAttributes, memo, ReactNode, useMemo } from "react"
+import { toast } from "sonner"
 import { useDataGrid } from "@/components/reui/data-grid/data-grid"
 import { Column } from "@tanstack/react-table"
 
@@ -19,7 +20,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { ArrowDownIcon, ArrowUpIcon, ChevronsUpDownIcon, CheckIcon, ArrowLeftToLineIcon, ArrowRightToLineIcon, ArrowLeftIcon, ArrowRightIcon, Settings2Icon, PinOffIcon } from "lucide-react"
+import { ArrowDownIcon, ArrowUpIcon, ChevronsUpDownIcon, CheckIcon, ArrowLeftToLineIcon, ArrowRightToLineIcon, ArrowLeftIcon, ArrowRightIcon, Settings2Icon, PinOffIcon, CopyIcon } from "lucide-react"
 
 interface DataGridColumnHeaderProps<
   TData,
@@ -251,7 +252,32 @@ function DataGridColumnHeaderInner<TData, TValue>({
           </DropdownMenuSubContent>
         </DropdownMenuSub>
       )
+      hasPreviousSection = true
     }
+
+    // Copy section
+    if (hasPreviousSection) {
+      items.push(<DropdownMenuSeparator key="sep-copy" />)
+    }
+    items.push(
+      <DropdownMenuItem
+        key="copy-column"
+        onClick={async () => {
+          const rows = table.getSortedRowModel().rows
+          const values = rows.map((row) => {
+            const value = row.getValue(column.id)
+            return value === null || value === undefined ? "" : String(value)
+          })
+          await navigator.clipboard.writeText(values.join("\n"))
+          toast.success(
+            `Copied ${values.length} value${values.length === 1 ? "" : "s"} from "${title || column.id}" to clipboard`
+          )
+        }}
+      >
+        <CopyIcon className="size-3.5!" aria-hidden="true" />
+        <span>Copy column</span>
+      </DropdownMenuItem>
+    )
 
     return items
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -269,6 +295,7 @@ function DataGridColumnHeaderInner<TData, TValue>({
     canMoveRight,
     visibility,
     table,
+    title,
     columnIndex,
     columnOrder,
     columnVisibilityKey, // Needed to update checkbox states when visibility changes

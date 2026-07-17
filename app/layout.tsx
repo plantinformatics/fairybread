@@ -14,6 +14,7 @@ import { Analytics } from '@vercel/analytics/next';
 import "./globals.css";
 
 import BreadCrumbNav from "@/components/bread-crumb-nav"
+import { AppToaster } from "@/components/app-toaster"
 
 const inter = Inter({subsets:['latin'],variable:'--font-sans'});
 
@@ -85,6 +86,7 @@ export default function RootLayout({
         <NuqsAdapter>
           <Suspense fallback={null}>
             <ThemeProvider>
+              <AppToaster />
               <PreferencesProvider>
                 {/* PcaDataProvider owns the shared fetch state — must sit inside
                   NuqsAdapter (already the parent) so useQueryState works */}

@@ -143,7 +143,9 @@ export function PcaExportDialog({
           <DialogClose render={<Button variant="outline" />}>
             Cancel
           </DialogClose>
-          <Button onClick={handleExport}>Export to CSV</Button>
+          <Button onClick={handleExport} disabled={rowCount === 0}>
+            Export to CSV
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
