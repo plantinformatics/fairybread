@@ -17,6 +17,7 @@ import {
 import type { Filter, FilterFieldConfig } from '@/components/reui/filters';
 import type { PCAPassportData } from '@/config/table-and-filter-config';
 import { downloadCSV, toCSV } from '@/lib/csv-export';
+import { cn } from '@/lib/utils';
 
 export function PcaExportDialog({
   table,
@@ -32,6 +33,12 @@ export function PcaExportDialog({
   const [open, setOpen] = useState(false);
 
   const visibleColumns = table.getVisibleLeafColumns();
+  const toggleableColumns = table
+    .getAllColumns()
+    .filter(
+      (column) =>
+        typeof column.accessorFn !== 'undefined' && column.getCanHide()
+    );
   const rowCount = table.getSortedRowModel().rows.length;
 
   const fieldsByKey = useMemo(() => {
@@ -71,14 +78,25 @@ export function PcaExportDialog({
           <section>
             <h4 className="mb-1.5 font-medium">Columns</h4>
             <div className="flex flex-wrap gap-1.5">
-              {visibleColumns.map((column) => (
-                <span
-                  key={column.id}
-                  className="rounded-md bg-muted px-2 py-0.5 text-xs"
-                >
-                  {column.id}
-                </span>
-              ))}
+              {toggleableColumns.map((column) => {
+                const isVisible = column.getIsVisible();
+                return (
+                  <button
+                    key={column.id}
+                    type="button"
+                    aria-pressed={isVisible}
+                    onClick={() => column.toggleVisibility(!isVisible)}
+                    className={cn(
+                      'rounded-md px-2 py-0.5 text-xs font-medium capitalize transition-colors',
+                      isVisible
+                        ? 'bg-success/10 text-success-foreground hover:bg-success/20 dark:bg-success/20 dark:hover:bg-success/30'
+                        : 'bg-muted text-muted-foreground hover:bg-muted/70'
+                    )}
+                  >
+                    {column.columnDef.meta?.headerTitle || column.id}
+                  </button>
+                );
+              })}
             </div>
           </section>
 
