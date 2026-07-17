@@ -166,6 +166,7 @@ export function PcaTable({
         onClearFilters={clearFilters}
         groupBy={groupBy}
         setGroupBy={setGroupBy}
+        chartSelection={chartSelection}
       />
       <DataGrid
         table={table}

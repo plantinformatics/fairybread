@@ -7,6 +7,7 @@ import { FunnelX, Plus, Settings2 } from 'lucide-react';
 import type { Table } from '@tanstack/react-table';
 
 import { PcaGroupByDropdown } from '@/components/data-explorer/pca-group-by-dropdown';
+import { PcaExportDialog } from '@/components/data-explorer/pca-export-dialog';
 
 import { type PCAPassportData } from '@/config/table-and-filter-config';
 
@@ -18,6 +19,7 @@ export function PcaTableToolbar({
   onClearFilters,
   groupBy,
   setGroupBy,
+  chartSelection,
 }: {
   table: Table<PCAPassportData>;
   filters: Filter[];
@@ -26,6 +28,7 @@ export function PcaTableToolbar({
   onClearFilters: () => void;
   groupBy: string;
   setGroupBy: (value: string) => void | Promise<unknown>;
+  chartSelection: { IID: string[] };
 }) {
   return (
     <div className="mb-5 flex items-start gap-2.5">
@@ -44,6 +47,12 @@ export function PcaTableToolbar({
           }
         />
       </div>
+      <PcaExportDialog
+        table={table}
+        filters={filters}
+        fields={fields}
+        chartSelection={chartSelection}
+      />
       <DataGridColumnVisibility
         table={table}
         trigger={
