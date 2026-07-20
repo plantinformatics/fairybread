@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { chartColourPalettes } from "@/config/chart-config";
 import { PC_OPTIONS, type PcAxis, usePreferences } from "@/context/preferences-context";
+import posthog from "posthog-js";
 
 const PALETTE_NAMES = Array.from(chartColourPalettes.keys());
 const PC_Z_NONE_VALUE = '__none__';
@@ -23,12 +24,14 @@ export default function SettingsPage() {
 
   const handlePaletteChange = (value: string | null) => {
     if (!value) return;
+    posthog.capture('colour_palette_changed', { palette: value, previous_palette: palette });
     setPalette(value);
   };
 
   const handlePcChange = (axis: 'x' | 'y') => (value: string | null) => {
     if (!value) return;
     if ((PC_OPTIONS as readonly string[]).includes(value)) {
+      posthog.capture('pc_axes_changed', { axis, value, previous_value: pcAxes[axis] });
       setPcAxes((prev) => ({ ...prev, [axis]: value as PcAxis }));
     }
   };
@@ -36,10 +39,12 @@ export default function SettingsPage() {
   const handlePcZChange = (value: string | null) => {
     if (!value) return;
     if (value === PC_Z_NONE_VALUE) {
+      posthog.capture('pc_axes_changed', { axis: 'z', value: null, previous_value: pcAxes.z });
       setPcAxes((prev) => ({ ...prev, z: null }));
       return;
     }
     if ((PC_OPTIONS as readonly string[]).includes(value)) {
+      posthog.capture('pc_axes_changed', { axis: 'z', value, previous_value: pcAxes.z });
       setPcAxes((prev) => ({ ...prev, z: value as PcAxis }));
     }
   };
@@ -95,7 +100,10 @@ export default function SettingsPage() {
           <Switch
             id="advanced-plot-settings"
             checked={advancedPlotSettings}
-            onCheckedChange={setAdvancedPlotSettings}
+            onCheckedChange={(enabled) => {
+              posthog.capture('advanced_plot_settings_toggled', { enabled });
+              setAdvancedPlotSettings(enabled);
+            }}
           />
         </div>
 

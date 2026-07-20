@@ -1,6 +1,7 @@
 import dynamic from "next/dynamic"
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCallback, useEffect, useRef, useState, useMemo } from "react";
+import posthog from "posthog-js";
 
 import { extractSortAndFilter, createPlotData } from "@/lib/dataProcessing";
 import { chartConfig, buildChartLayout } from "@/config/chart-config";
@@ -67,11 +68,16 @@ export function PcaPlot({
 
   const handleSelected = useCallback((eventData: any) => {
     if (eventData?.points?.length > 0) {
-      setChartSelection((prev: any) => ({ ...prev, IID: eventData.points.map((point: any) => point.text) }));
+      const selectedIDs: string[] = eventData.points.map((point: any) => point.text);
+      posthog.capture('plot_selection_made', {
+        selected_count: selectedIDs.length,
+        group_by: groupBy,
+      });
+      setChartSelection((prev: any) => ({ ...prev, IID: selectedIDs }));
     } else {
       setChartSelection((prev: any) => ({ ...prev, IID: [] }));
     }
-  }, [setChartSelection]);
+  }, [setChartSelection, groupBy]);
 
   // used for logging please remove
   useEffect(() => {

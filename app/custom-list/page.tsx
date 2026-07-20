@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { parseInput, matchTerms } from '@/lib/customListParseMatch'
 import { useCustomList } from '@/context/custom-list-context';
+import posthog from 'posthog-js';
 // ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
@@ -61,6 +62,12 @@ export default function CustomListPage() {
     const terms = parseInput(inputText);
     const {matched, unmatched} = matchTerms(terms, rawData);
     const genotypeIDList = matched.map(p => p.genotypeID);
+    posthog.capture('custom_list_parsed', {
+      crop: file,
+      terms_entered: terms.length,
+      matched_count: matched.length,
+      unmatched_count: unmatched.length,
+    });
     setCustomList(genotypeIDList)
     setMatchedRows(matched)
     setUnmatchedTerms(unmatched)
@@ -69,6 +76,7 @@ export default function CustomListPage() {
   };
 
   const handleReset = () => {
+    posthog.capture('custom_list_cleared', { crop: file, list_size: customList.length });
     setInputText("")
     setMatchedRows([])
     setUnmatchedTerms([])
@@ -336,7 +344,10 @@ export default function CustomListPage() {
                   size="sm"
                   variant="ghost"
                   className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
-                  onClick={() => setCustomList([])}
+                  onClick={() => {
+                    posthog.capture('custom_list_cleared', { crop: file, list_size: customList.length });
+                    setCustomList([]);
+                  }}
                 >
                   <X className="size-3.5" />
                   Clear

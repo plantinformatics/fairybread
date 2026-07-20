@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { columns } from '@/config/table-and-filter-config';
 import { ChevronsUpDown, Group } from 'lucide-react';
+import posthog from 'posthog-js';
 
 const groupingColumns = columns.filter(
   (col): col is (typeof columns)[number] & { accessorKey: string } =>
@@ -26,6 +27,7 @@ export function PcaGroupByDropdown({
   setGroupBy: (value: string) => void | Promise<unknown>;
 }) {
   const onGroupByChange = (value: string) => {
+    posthog.capture('group_by_changed', { group_by: value, previous_group_by: groupBy });
     void setGroupBy(value);
   };
 

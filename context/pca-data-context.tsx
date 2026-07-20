@@ -19,6 +19,7 @@
 
 import { createContext, useContext, useEffect, useState } from 'react';
 import { useQueryState, parseAsString } from 'nuqs';
+import posthog from 'posthog-js';
 import type { PCAPassportData } from '@/config/table-and-filter-config';
 import { ALL_ACCESSIONS_SUBSET } from '@/config/pca-location-config';
 
@@ -88,10 +89,14 @@ export function PcaDataProvider({ children }: { children: React.ReactNode }) {
   // selection back to "All Accessions" — a subset name from one crop is meaningless
   // (or could silently mismatch) for another.
   const setFile = (f: string) => {
+    posthog.capture('crop_selected', { crop: f, previous_crop: file });
     setQueryFile(f);
     setQuerySubset(ALL_ACCESSIONS_SUBSET);
   };
-  const setSubset = (s: string) => setQuerySubset(s);
+  const setSubset = (s: string) => {
+    posthog.capture('subset_changed', { subset: s, crop: file, previous_subset: subset });
+    setQuerySubset(s);
+  };
 
   const [rawData, setRawData] = useState<PCAPassportData[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);

@@ -18,6 +18,7 @@ import type { Filter, FilterFieldConfig } from '@/components/reui/filters';
 import type { PCAPassportData } from '@/config/table-and-filter-config';
 import { downloadCSV, toCSV } from '@/lib/csv-export';
 import { cn } from '@/lib/utils';
+import posthog from 'posthog-js';
 
 export function PcaExportDialog({
   table,
@@ -55,6 +56,12 @@ export function PcaExportDialog({
     const body = rows.map((row) =>
       visibleColumns.map((column) => row.getValue(column.id))
     );
+    posthog.capture('data_exported', {
+      row_count: rows.length,
+      column_count: visibleColumns.length,
+      filter_count: filters.length,
+      has_plot_selection: chartSelection.IID.length > 0,
+    });
     downloadCSV(`pca-export-${Date.now()}.csv`, toCSV(header, body));
     setOpen(false);
   };

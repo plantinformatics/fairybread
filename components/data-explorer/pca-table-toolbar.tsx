@@ -10,6 +10,7 @@ import { PcaGroupByDropdown } from '@/components/data-explorer/pca-group-by-drop
 import { PcaExportDialog } from '@/components/data-explorer/pca-export-dialog';
 
 import { type PCAPassportData } from '@/config/table-and-filter-config';
+import posthog from 'posthog-js';
 
 export function PcaTableToolbar({
   table,
@@ -30,13 +31,30 @@ export function PcaTableToolbar({
   setGroupBy: (value: string) => void | Promise<unknown>;
   chartSelection: { IID: string[] };
 }) {
+  const handleFiltersChange = (newFilters: Filter[]) => {
+    if (newFilters.length > filters.length) {
+      const added = newFilters[newFilters.length - 1];
+      posthog.capture('filter_added', {
+        filter_field: added.field,
+        filter_operator: added.operator,
+        total_filters: newFilters.length,
+      });
+    }
+    onFiltersChange(newFilters);
+  };
+
+  const handleClearFilters = () => {
+    posthog.capture('filters_cleared', { filter_count: filters.length });
+    onClearFilters();
+  };
+
   return (
     <div className="mb-5 flex items-start gap-2.5">
       <div className="flex-1">
         <Filters
           filters={filters}
           fields={fields}
-          onChange={onFiltersChange}
+          onChange={handleFiltersChange}
           showSearchInput={true}
           size="sm"
           trigger={
@@ -62,11 +80,11 @@ export function PcaTableToolbar({
           </Button>
         }
       />
-      <PcaGroupByDropdown 
-        groupBy={groupBy} 
+      <PcaGroupByDropdown
+        groupBy={groupBy}
         setGroupBy={setGroupBy} />
         {filters.length > 0 && (
-          <Button variant="outline" size="sm" onClick={onClearFilters}>
+          <Button variant="outline" size="sm" onClick={handleClearFilters}>
             <FunnelX /> Clear
           </Button>
       )}
