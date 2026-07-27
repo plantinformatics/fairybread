@@ -63,8 +63,8 @@ export function PcaPlot({
 
   // Used because dark mode needs to be an explicit theme change for plotly
   const dynamicLayout = useMemo(() => {
-    return buildChartLayout(isDarkMode, palette);
-  }, [palette, isDarkMode]);
+    return buildChartLayout(isDarkMode, palette, pcAxes);
+  }, [palette, isDarkMode, pcAxes]);
 
   const handleSelected = useCallback((eventData: any) => {
     if (eventData?.points?.length > 0) {

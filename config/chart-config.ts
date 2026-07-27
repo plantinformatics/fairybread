@@ -1,3 +1,10 @@
+import type { PcAxes, PcAxis } from "@/context/preferences-context";
+
+/** e.g. "PC1" -> "Principal Component 1 (PC1)" */
+export function pcAxisTitle(pc: PcAxis): string {
+  return `Principal Component ${pc.slice(2)} (${pc})`;
+}
+
 export const chartLayout = {
     autosize: true,
     xaxis: {
@@ -70,9 +77,24 @@ const chartThemeStyles = {
   },
 } as const;
 
-export function buildChartLayout(isDarkMode: boolean, palette: string) {
+export function buildChartLayout(isDarkMode: boolean, palette: string, pcAxes: PcAxes) {
   const { height: _defaultHeight, ...baseLayout } = chartLayout;
   const theme = isDarkMode ? chartThemeStyles.dark : chartThemeStyles.light;
+
+  const xaxis = {
+    ...baseLayout.xaxis,
+    title: { text: pcAxisTitle(pcAxes.x) },
+    color: theme.axisColor,
+    gridcolor: theme.gridColor,
+    zerolinecolor: theme.zeroLineColor,
+  };
+  const yaxis = {
+    ...baseLayout.yaxis,
+    title: { text: pcAxisTitle(pcAxes.y) },
+    color: theme.axisColor,
+    gridcolor: theme.gridColor,
+    zerolinecolor: theme.zeroLineColor,
+  };
 
   return {
     ...baseLayout,
@@ -84,18 +106,23 @@ export function buildChartLayout(isDarkMode: boolean, palette: string) {
       ...(baseLayout.font ?? {}),
       color: theme.axisColor,
     },
-    xaxis: {
-      ...baseLayout.xaxis,
-      color: theme.axisColor,
-      gridcolor: theme.gridColor,
-      zerolinecolor: theme.zeroLineColor,
-    },
-    yaxis: {
-      ...baseLayout.yaxis,
-      color: theme.axisColor,
-      gridcolor: theme.gridColor,
-      zerolinecolor: theme.zeroLineColor,
-    },
+    xaxis,
+    yaxis,
+    // scatter3d traces (used when a Z axis is selected) read their axes from
+    // `scene.*axis` rather than the top-level `xaxis`/`yaxis` above.
+    ...(pcAxes.z && {
+      scene: {
+        xaxis,
+        yaxis,
+        zaxis: {
+          ...baseLayout.xaxis,
+          title: { text: pcAxisTitle(pcAxes.z) },
+          color: theme.axisColor,
+          gridcolor: theme.gridColor,
+          zerolinecolor: theme.zeroLineColor,
+        },
+      },
+    }),
     legend: {
       ...baseLayout.legend,
       bgcolor: theme.legendBgColor,
