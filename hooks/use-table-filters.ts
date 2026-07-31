@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { parseAsArrayOf, parseAsString, useQueryStates } from "nuqs"
 
-import { type Filter, type FilterFieldConfig } from "@/components/reui/filters"
+import type { Filter, FilterFieldConfig } from "@/components/reui/filters"
 import { applyFilters } from "@/lib/filter-engine"
 
 interface UseTableFiltersOptions<TRow extends Record<string, unknown>> {
@@ -33,20 +33,31 @@ const filtersFromQueryStates = (
       values: values ?? [],
     }))
 
+const toQueryStates = (
+  filters: Filter[],
+  keys: string[]
+): Record<string, string[] | null> => {
+  const next: Record<string, string[] | null> = {}
+  keys.forEach((key) => {
+    next[key] = null
+  })
+
+  filters.forEach(({ field, values }) => {
+    const cleanValues = (values || [])
+      .map((value) => String(value))
+      .filter((value) => value.trim() !== "")
+    next[field] = cleanValues.length > 0 ? cleanValues : null
+  })
+
+  return next
+}
+
 export function useTableFilters<TRow extends Record<string, unknown>>({
   tableData,
   fields,
   debounceMs = 250,
   onFiltersChange,
 }: UseTableFiltersOptions<TRow>) {
-  const urlDebounceRef = useRef<NodeJS.Timeout | null>(null)
-
-  useEffect(() => {
-    return () => {
-      if (urlDebounceRef.current) clearTimeout(urlDebounceRef.current)
-    }
-  }, [])
-
   const queryStateParsers = useMemo(() => {
     return Object.fromEntries(
       fields
@@ -55,6 +66,11 @@ export function useTableFilters<TRow extends Record<string, unknown>>({
         .map((key) => [key, parseAsArrayOf(parseAsString)])
     )
   }, [fields])
+
+  const queryStateKeys = useMemo(
+    () => Object.keys(queryStateParsers),
+    [queryStateParsers]
+  )
 
   const [queryStates, setQueryStates] = useQueryStates(queryStateParsers, {
     history: "push",
@@ -74,56 +90,62 @@ export function useTableFilters<TRow extends Record<string, unknown>>({
     filtersFromQueryStates(queryStates, fieldsMap)
   )
 
+  // Debounced copy used for expensive work (filtered rows → plot / colour maps).
+  // `filters` stays immediate so the controlled text inputs remain responsive.
+  const [appliedFilters, setAppliedFilters] = useState<Filter[]>(filters)
+  const skipNextApplyRef = useRef(false)
+
+  useEffect(() => {
+    // clearFilters applies synchronously and sets this so we don't schedule a
+    // second (debounced) write of the same empty state.
+    if (skipNextApplyRef.current) {
+      skipNextApplyRef.current = false
+      return
+    }
+
+    // Same reference ⇒ nothing to apply (initial mount, or just-applied update).
+    if (filters === appliedFilters) return
+
+    const timer = setTimeout(() => {
+      setAppliedFilters(filters)
+      setQueryStates(toQueryStates(filters, queryStateKeys))
+    }, debounceMs)
+
+    return () => clearTimeout(timer)
+  }, [filters, appliedFilters, debounceMs, queryStateKeys, setQueryStates])
+
   const filteredData = useMemo(() => {
     // Remap filter.field to the field's dataKey (if provided) so the engine
     // reads from the correct row attribute. This lets a field have a logical
     // identity (e.g. "customList") that's distinct from the underlying data
     // key it filters on (e.g. "genotypeID").
-    const resolvedFilters = filters.map((filter) => {
+    const resolvedFilters = appliedFilters.map((filter) => {
       const dataKey = fieldsMap[filter.field]?.dataKey
       return dataKey ? { ...filter, field: dataKey } : filter
     })
     return applyFilters<TRow>(tableData, resolvedFilters)
-  }, [tableData, filters, fieldsMap])
+  }, [tableData, appliedFilters, fieldsMap])
 
   const handleFiltersChange = useCallback(
     (newFilters: Filter[]) => {
       setFilters(newFilters)
       onFiltersChange?.(newFilters)
-
-      if (urlDebounceRef.current) clearTimeout(urlDebounceRef.current)
-      urlDebounceRef.current = setTimeout(() => {
-        const next: Record<string, string[] | null> = {}
-        Object.keys(queryStates).forEach((key) => {
-          next[key] = null
-        })
-
-        newFilters.forEach(({ field, values }) => {
-          const cleanValues = (values || [])
-            .map((value) => String(value))
-            .filter((value) => value.trim() !== "")
-          next[field] = cleanValues.length > 0 ? cleanValues : null
-        })
-
-        setQueryStates(next)
-      }, debounceMs)
     },
-    [debounceMs, onFiltersChange, queryStates, setQueryStates]
+    [onFiltersChange]
   )
 
   const clearFilters = useCallback(() => {
+    // Apply immediately so clear doesn't wait for the debounce window.
+    skipNextApplyRef.current = true
     setFilters([])
+    setAppliedFilters([])
     onFiltersChange?.([])
-
-    const clearedStates: Record<string, null> = {}
-    Object.keys(queryStates).forEach((key) => {
-      clearedStates[key] = null
-    })
-    setQueryStates(clearedStates)
-  }, [onFiltersChange, queryStates, setQueryStates])
+    setQueryStates(toQueryStates([], queryStateKeys))
+  }, [onFiltersChange, queryStateKeys, setQueryStates])
 
   return {
     filters,
+    appliedFilters,
     filteredData,
     handleFiltersChange,
     clearFilters,

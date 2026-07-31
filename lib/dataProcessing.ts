@@ -76,7 +76,7 @@ export function createPlotData(
     // Z order manipulation is only supported in scatter not scattergl type
     // See https://github.com/plotly/plotly.js/pull/6918
     const entries = [...groupedData].sort(
-      ([a]: any, [b]: any) => Number(a === "Selected") - Number(b === "Selected")
+      ([a]: any, [b]: any) => Number(a === "Match") - Number(b === "Selected")
     )
     return entries.map(([key, value]: any) => {
       return {
@@ -89,7 +89,7 @@ export function createPlotData(
           p[groupingValue] ?? "N/A",
         ]),
         name: (key.length < 20 ? key : key.substring(0, 17) + "...") + " (" + value.length + ")",
-        opacity: key === "Selected" ? 1 : 0.7,
+        opacity: key === "Match" ? 0.8 : 0.5,
         mode: "markers",
         type: pcz ? "scatter3d" : "scattergl",
         marker: pcz ? { size: 3 } : { size: 5 },

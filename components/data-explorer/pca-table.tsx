@@ -80,7 +80,7 @@ export function PcaTable({
     return [...fields, customListField];
   }, [customList]);
 
-  const { filters, filteredData, handleFiltersChange, clearFilters } =
+  const { filters, appliedFilters, filteredData, handleFiltersChange, clearFilters } =
   useTableFilters<PCAPassportData>({
     tableData,
     fields: fieldsWithCustomList,
@@ -89,16 +89,18 @@ export function PcaTable({
     },
   });
 
-  // Column accessorKeys that currently have a non-empty filter (customList → genotypeID).
+  // Column accessorKeys that currently have a non-empty *applied* filter
+  // (customList → genotypeID). Uses the debounced filters so colour-map
+  // rebuilds stay in sync with the plot, not every keystroke.
   const activeFilterFields = useMemo(() => {
     const fields: string[] = [];
-    for (const filter of filters) {
+    for (const filter of appliedFilters) {
       const hasValue = (filter.values ?? []).some((value) => String(value).trim() !== "");
       if (!hasValue) continue;
       fields.push(filter.field === "customList" ? "genotypeID" : filter.field);
     }
     return fields;
-  }, [filters]);
+  }, [appliedFilters]);
 
   // Per-column colour maps for the active group-by and any filtered columns.
   // When filters force groupBy to "textFilter", filtered columns still get
@@ -134,12 +136,12 @@ export function PcaTable({
   useEffect(() => {
     console.log("Table data has changed:", tableData)
   }, [tableData])
-  // Used for auto switching groupBy to text filter and back
+  // Auto-switch groupBy once applied filters settle (same debounce as the plot).
   const hasTextFilterInput = useMemo(() => {
-    return filters.some((filter) =>
+    return appliedFilters.some((filter) =>
       (filter.values ?? []).some((value) => String(value).trim() !== "")
     );
-  }, [filters]);
+  }, [appliedFilters]);
 
   useEffect(() => {
     if (hasTextFilterInput) {
