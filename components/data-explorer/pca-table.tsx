@@ -19,6 +19,8 @@ import { columns, fields, PCAPassportData } from '@/config/table-and-filter-conf
 import { useTableFilters } from '@/hooks/use-table-filters';
 import { PcaTableToolbar } from '@/components/data-explorer/pca-table-toolbar';
 import { useCustomList } from '@/context/custom-list-context';
+import { usePreferences } from '@/context/preferences-context';
+import { buildGroupedEntries, buildRowColorMap } from '@/lib/dataProcessing';
 import type { FilterFieldConfig } from '@/components/reui/filters';
 import { ListChecks } from 'lucide-react';
 
@@ -52,6 +54,7 @@ export function PcaTable({
   const previousGroupByRef = useRef<string>(groupBy === "textFilter" ? "textFilter" : groupBy);
   const isAutoTextFilterGroupByRef = useRef<boolean>(false);
   const { customList } = useCustomList();
+  const { palette } = usePreferences();
 
   // Inject a "Custom List" filter option that is powered by the user's
   // current custom list. It filters rows by `genotypeID` and is disabled
@@ -85,6 +88,37 @@ export function PcaTable({
       setPagination((prev) => ({ ...prev, pageIndex: 0 }));
     },
   });
+
+  // Column accessorKeys that currently have a non-empty filter (customList → genotypeID).
+  const activeFilterFields = useMemo(() => {
+    const fields: string[] = [];
+    for (const filter of filters) {
+      const hasValue = (filter.values ?? []).some((value) => String(value).trim() !== "");
+      if (!hasValue) continue;
+      fields.push(filter.field === "customList" ? "genotypeID" : filter.field);
+    }
+    return fields;
+  }, [filters]);
+
+  // Per-column colour maps for the active group-by and any filtered columns.
+  // When filters force groupBy to "textFilter", filtered columns still get
+  // value-based colours (rather than Match/Not Match) so the table dots stay useful.
+  const columnColorMaps = useMemo(() => {
+    const maps = new Map<string, Map<string, string>>();
+    const fieldsToColor = new Set<string>(activeFilterFields);
+    if (groupBy && groupBy !== "textFilter") {
+      fieldsToColor.add(groupBy);
+    }
+    for (const field of fieldsToColor) {
+      const groupedEntries = buildGroupedEntries(
+        rawData,
+        field,
+        field === groupBy ? tableFiltered.IID : [],
+      );
+      maps.set(field, buildRowColorMap(groupedEntries, palette));
+    }
+    return maps;
+  }, [activeFilterFields, groupBy, rawData, tableFiltered, palette]);
 
   // Chart selection logic
   useEffect(() => {
@@ -154,6 +188,11 @@ export function PcaTable({
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    meta: {
+      groupBy,
+      activeFilterFields,
+      columnColorMaps,
+    },
   });
 
   return (

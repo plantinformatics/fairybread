@@ -7,7 +7,7 @@ import { parse } from "csv-parse/sync";
 import { replaceNullsWithMissing } from '@/lib/dataProcessing'
 
 async function fetchAndParsePCAFile(PCAFileURL: string): Promise<any> {
-  const response = await fetch(PCAFileURL, { next: { revalidate: 3600 } });
+  const response = await fetch(PCAFileURL, { next: { revalidate: 86400 } }); // one day in seconds
   if (!response.ok) {
     const errorText = await response.text();
     console.log(chalk.red(`Error response: ${errorText.substring(0, 200)}`));

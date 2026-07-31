@@ -1,4 +1,5 @@
 import type { PcAxes } from '@/context/preferences-context';
+import { chartColourPalettes } from '@/config/chart-config';
 
 export function extractSortAndFilter(PCAPassportData: any[], groupingValue: string, numberOfEntries: number) {
     const groupedPCAPassport = Object.groupBy(PCAPassportData, (p: any) => p[groupingValue]);
@@ -14,7 +15,57 @@ export function extractSortAndFilter(PCAPassportData: any[], groupingValue: stri
     // rebuild the array with the "Other" group and the null entries at the end
     return [...top, ["Other", rest], ["N/A", missing]];
   }
-  
+
+/**
+ * Splits `rawData` into the same ordered groups used to build the plot's
+ * traces, so other consumers (e.g. table row colouring) can stay in sync
+ * with the plot's legend/colour order.
+ */
+export function buildGroupedEntries(
+  rawData: any[],
+  groupingValue: string,
+  matchedGenotypeIDs: string[] = [],
+  numberOfEntries: number = 15,
+): [string, any[]][] {
+  if (groupingValue === "textFilter") {
+    const matchedSet = new Set(matchedGenotypeIDs);
+    const groupedData = Object.groupBy(
+      rawData,
+      (item: any) => (matchedSet.has(item.genotypeID) ? "Match" : "Not Match"),
+    );
+    return Object.entries(groupedData) as [string, any[]][];
+  }
+  return extractSortAndFilter(rawData, groupingValue, numberOfEntries) as [string, any[]][];
+}
+
+/**
+ * Maps each row's `genotypeID` to the colour its group is assigned in the
+ * PCA plot (same group order + palette, see `createPlotData`). Used to draw
+ * colour swatches next to values in the active group-by / filtered column.
+ */
+export function buildRowColorMap(
+  groupedEntries: [string, any[]][],
+  palette: string,
+): Map<string, string> {
+  const colors = chartColourPalettes.get(palette) || [];
+  const colorMap = new Map<string, string>();
+  if (!colors.length) return colorMap;
+
+  // Mirrors the "Selected" group ordering used when building plot traces.
+  const entries = [...groupedEntries].sort(
+    ([a]: any, [b]: any) => Number(a === "Selected") - Number(b === "Selected"),
+  );
+
+  entries.forEach(([, items]: any, index) => {
+    const color = colors[index % colors.length];
+    for (const item of items) {
+      colorMap.set(item.genotypeID, color);
+    }
+  });
+
+  return colorMap;
+}
+
 export function createPlotData(
   groupedData: any[],
   groupingValue: string,

@@ -3,7 +3,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import posthog from "posthog-js";
 
-import { extractSortAndFilter, createPlotData } from "@/lib/dataProcessing";
+import { buildGroupedEntries, createPlotData } from "@/lib/dataProcessing";
 import { chartConfig, buildChartLayout } from "@/config/chart-config";
 import type { PCAPassportData } from "@/config/table-and-filter-config";
 import { LoadingOverlay } from "@/components/data-explorer/pca-plot-loading-overlay";
@@ -45,18 +45,8 @@ export function PcaPlot({
 
   useEffect(()=>{
     setLoading(true);
-    if (groupBy == "textFilter") {
-      const tableFilteredSet = new Set(tableFiltered.IID)
-      const groupedData = Object.groupBy(
-      rawData, 
-      item => tableFilteredSet.has(item.genotypeID) ? "Match" : "Not Match")
-      const textFilteredData = createPlotData(Object.entries(groupedData), groupBy, pcAxes)
-      setData(textFilteredData)
-    } else {
-      const sortedEntries = extractSortAndFilter(rawData, groupBy, 15);
-      const groupedPlotData = createPlotData(sortedEntries, groupBy, pcAxes);
-      setData(groupedPlotData)
-    }
+    const groupedEntries = buildGroupedEntries(rawData, groupBy, tableFiltered.IID);
+    setData(createPlotData(groupedEntries, groupBy, pcAxes));
     setLoading(false);
   }, [rawData, groupBy, tableFiltered, pcAxes])
 

@@ -15,9 +15,24 @@
  *    "Country of Origin" / "Taxonomy" entries as templates).
  */
 
-import { Column, ColumnDef } from "@tanstack/react-table"
+import type { CellContext, ColumnDef, HeaderContext, RowData } from "@tanstack/react-table"
 import { DataGridColumnHeader } from "@/components/reui/data-grid/data-grid-column-header"
 import type { FilterFieldConfig } from "@/components/reui/filters"
+
+declare module "@tanstack/react-table" {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    interface TableMeta<TData extends RowData> {
+        /** The `accessorKey` the table/plot is currently grouped by (or "textFilter"). */
+        groupBy?: string
+        /** Column `accessorKey`s that currently have a non-empty table filter. */
+        activeFilterFields?: string[]
+        /**
+         * Per-column colour maps (`accessorKey` → `genotypeID` → colour).
+         * Built for the active group-by column and any filtered columns.
+         */
+        columnColorMaps?: Map<string, Map<string, string>>
+    }
+}
 
 import { 
     BookOpenText,
@@ -25,7 +40,7 @@ import {
     Globe,
     Hash,
     Landmark,
-    Map,
+    Map as MapIcon,
     MapPinned,
     Sprout,
     Tag,
@@ -59,11 +74,72 @@ export type PCAPassportData = {
     "sampStat": string
 }
 
-const addSortingDropdownFn = (column: Column<PCAPassportData>, accessorKey: string) => {
+/** Same-sized colour swatch used in active column cells and headers. */
+function GroupColorDot({ color }: { color: string }) {
     return (
-        <DataGridColumnHeader column={column} title={accessorKey} visibility />
+        <span
+            className="inline-block size-2.5 shrink-0 rounded-full"
+            style={{ backgroundColor: color }}
+            aria-hidden="true"
+        />
     )
 }
+
+/** True when this column is the active group-by, or has a non-empty table filter. */
+function isColumnHighlighted(
+    table: HeaderContext<PCAPassportData, unknown>["table"] | CellContext<PCAPassportData, unknown>["table"],
+    accessorKey: string,
+): boolean {
+    const meta = table.options.meta
+    return (
+        meta?.groupBy === accessorKey ||
+        (meta?.activeFilterFields?.includes(accessorKey) ?? false)
+    )
+}
+
+function getColumnDotColor(
+    table: CellContext<PCAPassportData, unknown>["table"],
+    accessorKey: string,
+    genotypeID: string,
+): string | undefined {
+    if (!isColumnHighlighted(table, accessorKey)) return undefined
+    return table.options.meta?.columnColorMaps?.get(accessorKey)?.get(genotypeID)
+}
+
+/**
+ * Header that bolds when this column is the active group-by, or when a table
+ * filter is applied on this column.
+ */
+const renderActiveColumnHeader = (accessorKey: string, title: string) =>
+    ({ column, table }: HeaderContext<PCAPassportData, unknown>) => {
+        const isActive = isColumnHighlighted(table, accessorKey)
+
+        return (
+            <DataGridColumnHeader
+                column={column}
+                title={title}
+                visibility
+                className={isActive ? "font-bold text-foreground" : undefined}
+            />
+        )
+    }
+
+/**
+ * Cell prefixed with a colour dot when this column is highlighted (active
+ * group-by or filtered) — colour matches the group's palette assignment.
+ * `min-w-0 break-words` keeps long values (e.g. accession names) wrapping
+ * inside the fixed-width cell instead of overflowing.
+ */
+const renderActiveColumnCell = (accessorKey: string) =>
+    ({ row, table, getValue }: CellContext<PCAPassportData, unknown>) => {
+        const color = getColumnDotColor(table, accessorKey, row.original.genotypeID)
+        return (
+            <span className="flex min-w-0 items-center gap-2">
+                {color && <GroupColorDot color={color} />}
+                <span className="min-w-0 break-words">{getValue() as string}</span>
+            </span>
+        )
+    }
 
 type ColumnMeta = {
     filter?: Omit<FilterFieldConfig, "key" | "label"> & {
@@ -81,7 +157,8 @@ export const columns: FilterableColumnDef[] = [
     {
         id: "Genotype ID",
         accessorKey: "genotypeID",
-        header: ({column}) => addSortingDropdownFn(column,"Genotype ID"),
+        header: renderActiveColumnHeader("genotypeID", "Genotype ID"),
+        cell: renderActiveColumnCell("genotypeID"),
         meta: {
             filter: {
                 type: "text",
@@ -93,18 +170,22 @@ export const columns: FilterableColumnDef[] = [
     {
         id: "Accession Number",
         accessorKey: "accessionNumber",
-        header: ({column}) => addSortingDropdownFn(column,"Accession Number"),
-        cell: ({ row }) => {
+        header: renderActiveColumnHeader("accessionNumber", "Accession Number"),
+        cell: ({ row, table }) => {
             // genesys uses the doi as the URL not the accession number
+            const color = getColumnDotColor(table, "accessionNumber", row.original.genotypeID)
             return (
-                <a
-                    href={"https://www.genesys-pgr.org/" + row.original.doi as string}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-bold underline-offset-4 hover:underline"
-                >
-                  {row.original.accessionNumber as string}
-                </a>
+                <span className="flex min-w-0 items-center gap-2">
+                    {color && <GroupColorDot color={color} />}
+                    <a
+                        href={"https://www.genesys-pgr.org/" + row.original.doi as string}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="min-w-0 break-words font-bold underline-offset-4 hover:underline"
+                    >
+                      {row.original.accessionNumber as string}
+                    </a>
+                </span>
             )
         },
         meta: {
@@ -118,7 +199,8 @@ export const columns: FilterableColumnDef[] = [
     {
         id: "Accession Name",
         accessorKey: "accessionName",
-        header: ({column}) => addSortingDropdownFn(column,"Accession Name"),
+        header: renderActiveColumnHeader("accessionName", "Accession Name"),
+        cell: renderActiveColumnCell("accessionName"),
         meta: {
             filter: {
                 type: "text",
@@ -129,12 +211,13 @@ export const columns: FilterableColumnDef[] = [
     },
     {
         id: "Country of Origin",
-        header: ({column}) => addSortingDropdownFn(column,"Country of Origin"),
+        header: renderActiveColumnHeader("countryOfOrigin.name", "Country of Origin"),
         accessorFn: (row) => row["countryOfOrigin.name"],
         accessorKey: "countryOfOrigin.name",
         // Uncommon implamentation of having accessor key and accessor function, could lead to unepxected behaviour
         sortingFn: 'text',
         enableGrouping: true,
+        cell: renderActiveColumnCell("countryOfOrigin.name"),
         meta: {
             filter: {
                 type: "text",
@@ -146,8 +229,9 @@ export const columns: FilterableColumnDef[] = [
     {
         id: "Region",
         accessorKey: "region",
-        header: ({column}) => addSortingDropdownFn(column,"Region"),
+        header: renderActiveColumnHeader("region", "Region"),
         enableGrouping: true,
+        cell: renderActiveColumnCell("region"),
         meta: {
             filter: {
                 type: "text",
@@ -159,13 +243,14 @@ export const columns: FilterableColumnDef[] = [
     {
         id: "Sub-Region",
         accessorKey: "subRegion",
-        header: ({column}) => addSortingDropdownFn(column,"Sub-Region"),
+        header: renderActiveColumnHeader("subRegion", "Sub-Region"),
         enableGrouping: true,
+        cell: renderActiveColumnCell("subRegion"),
         meta: {
             filter: {
                 type: "text",
                 label: "Sub-Region",
-                icon: <Map className="size-3.5" />,
+                icon: <MapIcon className="size-3.5" />,
             },
         },
     },
@@ -194,9 +279,10 @@ export const columns: FilterableColumnDef[] = [
     },
     {
         id: "Taxonomy",
-        header: ({column}) => addSortingDropdownFn(column,"Taxonomy"),
+        header: renderActiveColumnHeader("taxonomy.taxonName", "Taxonomy"),
         accessorFn: (row) => row["taxonomy.taxonName"],
         accessorKey: "taxonomy.taxonName",
+        cell: renderActiveColumnCell("taxonomy.taxonName"),
         meta: {
             filter: {
                 type: "text",
@@ -207,9 +293,10 @@ export const columns: FilterableColumnDef[] = [
     },
     {
         id: "Donor Name",
-        header: ({column}) => addSortingDropdownFn(column,"Donor Name"),
+        header: renderActiveColumnHeader("donorName", "Donor Name"),
         accessorKey: "donorName",
         enableGrouping: true,
+        cell: renderActiveColumnCell("donorName"),
         meta: {
             filter: {
                 type: "text",
@@ -220,9 +307,10 @@ export const columns: FilterableColumnDef[] = [
     },
     {
         id: "Biological status",
-        header: ({column}) => addSortingDropdownFn(column,"Biological status"),
+        header: renderActiveColumnHeader("sampStat", "Biological status"),
         accessorKey: "sampStat",
         enableGrouping: true,
+        cell: renderActiveColumnCell("sampStat"),
         meta: {
             filter: {
                 type: "text",
