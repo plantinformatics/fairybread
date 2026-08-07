@@ -1,21 +1,27 @@
 import type { PcAxes, PcAxis } from "@/context/preferences-context";
 
-/** e.g. "PC1" -> "Principal Component 1 (PC1)" */
-export function pcAxisTitle(pc: PcAxis): string {
-  return `Principal Component ${pc.slice(2)} (${pc})`;
+/** e.g. "PC1" or "PC1 (14.7%)" when PVE is available. */
+export function pcAxisTitle(pc: PcAxis, pve?: number[] | null): string {
+  if (!pve) return pc;
+
+  const index = Number(pc.slice(2)) - 1;
+  const proportion = pve[index];
+  if (!Number.isFinite(proportion)) return pc;
+
+  return `${pc} (${(proportion * 100).toFixed(1)}%)`;
 }
 
 export const chartLayout = {
     autosize: true,
     xaxis: {
-      title: { text: "Principal Component 1 (PC1)" },
+      title: { text: "PC1" },
       showgrid: true,
       gridcolor: "#e5e7eb",
       zeroline: true,
       zerolinecolor: "#9ca3af",
     },
     yaxis: {
-      title: { text: "Principal Component 2 (PC2)" },
+      title: { text: "PC2" },
       showgrid: true,
       gridcolor: "#e5e7eb",
       zeroline: true,
@@ -77,20 +83,25 @@ const chartThemeStyles = {
   },
 } as const;
 
-export function buildChartLayout(isDarkMode: boolean, palette: string, pcAxes: PcAxes) {
+export function buildChartLayout(
+  isDarkMode: boolean,
+  palette: string,
+  pcAxes: PcAxes,
+  pve: number[] | null = null,
+) {
   const { height: _defaultHeight, ...baseLayout } = chartLayout;
   const theme = isDarkMode ? chartThemeStyles.dark : chartThemeStyles.light;
 
   const xaxis = {
     ...baseLayout.xaxis,
-    title: { text: pcAxisTitle(pcAxes.x) },
+    title: { text: pcAxisTitle(pcAxes.x, pve) },
     color: theme.axisColor,
     gridcolor: theme.gridColor,
     zerolinecolor: theme.zeroLineColor,
   };
   const yaxis = {
     ...baseLayout.yaxis,
-    title: { text: pcAxisTitle(pcAxes.y) },
+    title: { text: pcAxisTitle(pcAxes.y, pve) },
     color: theme.axisColor,
     gridcolor: theme.gridColor,
     zerolinecolor: theme.zeroLineColor,
@@ -116,7 +127,7 @@ export function buildChartLayout(isDarkMode: boolean, palette: string, pcAxes: P
         yaxis,
         zaxis: {
           ...baseLayout.xaxis,
-          title: { text: pcAxisTitle(pcAxes.z) },
+          title: { text: pcAxisTitle(pcAxes.z, pve) },
           color: theme.axisColor,
           gridcolor: theme.gridColor,
           zerolinecolor: theme.zeroLineColor,

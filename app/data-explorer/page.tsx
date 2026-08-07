@@ -12,7 +12,7 @@ import BottomFooter from '@/components/bottom-footer';
 
 export default function Page() {
   // `rawData` and `isLoading` come from the shared context — no local fetch needed.
-  const { rawData, isLoading } = usePcaData();
+  const { rawData, isLoading, pve } = usePcaData();
 
   const [groupBy, setGroupBy] = useQueryState("groupBy", parseAsString.withDefault("subRegion"));
   const { palette } = usePreferences();
@@ -37,6 +37,7 @@ export default function Page() {
       setTableFiltered={setTableFiltered}
       isDarkMode={isDarkMode}
       palette={palette}
+      pve={pve}
       />
       <PcaTable 
       rawData={rawData} 

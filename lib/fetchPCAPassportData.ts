@@ -22,9 +22,44 @@ async function fetchAndParsePCAFile(PCAFileURL: string): Promise<any> {
     }
   )
   return data
-} 
+}
 
-export async function fetchPCAPassportData(PCAFile: string, subset: string = ALL_ACCESSIONS_SUBSET) {
+/**
+ * Fetches a one-value-per-line PVE file (proportions for PC1, PC2, …).
+ * Returns null on any failure so PCA loading is never blocked by a missing PVE file.
+ */
+async function fetchAndParsePveFile(pveFileUrl: string): Promise<number[] | null> {
+  try {
+    const response = await fetch(pveFileUrl, { next: { revalidate: 86400 } });
+    if (!response.ok) {
+      console.log(chalk.yellow(`⚠ PVE file fetch failed (${response.status}): ${pveFileUrl}`));
+      return null;
+    }
+    const text = await response.text();
+    const values = text
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0)
+      .map((line) => Number(line));
+
+    if (values.length === 0 || values.some((v) => !Number.isFinite(v))) {
+      console.log(chalk.yellow(`⚠ PVE file contained no valid numbers: ${pveFileUrl}`));
+      return null;
+    }
+    return values;
+  } catch (error) {
+    console.log(chalk.yellow(`⚠ Failed to load PVE file: ${pveFileUrl}`), error);
+    return null;
+  }
+}
+
+export type PCAPassportFetchResult = {
+  data: any[];
+  /** Proportion of variance explained per PC (index 0 = PC1), or null if unavailable. */
+  pve: number[] | null;
+};
+
+export async function fetchPCAPassportData(PCAFile: string, subset: string = ALL_ACCESSIONS_SUBSET): Promise<PCAPassportFetchResult> {
   try {
     const debug = chalk.blue;
 
@@ -36,7 +71,10 @@ export async function fetchPCAPassportData(PCAFile: string, subset: string = ALL
       throw new Error('Invalid PCA file');
     }
 
-    const PCAData = await fetchAndParsePCAFile(fileInfo.fileUrl);
+    const [PCAData, pve] = await Promise.all([
+      fetchAndParsePCAFile(fileInfo.fileUrl),
+      fileInfo.pveFileUrl ? fetchAndParsePveFile(fileInfo.pveFileUrl) : Promise.resolve(null),
+    ]);
 
     // Get genotype IDs
     const genotypeIds = PCAData.map((p: any) => p.IID);
@@ -130,7 +168,11 @@ export async function fetchPCAPassportData(PCAFile: string, subset: string = ALL
       return pca ? [{ ...passport, pca }] : [];
     });
 
-    return mergedData;
+    if (pve) {
+      console.log(debug(`PVE loaded: ${pve.length} components`));
+    }
+
+    return { data: mergedData, pve };
   } catch (error) {
     console.error('Error fetching PCA passport data:', error);
     throw error;

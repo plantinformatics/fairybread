@@ -41,6 +41,8 @@ interface PcaDataContextValue {
   setSubset: (s: string) => void;
   /** The full loaded dataset for the selected crop/subset. Empty array while loading. */
   rawData: PCAPassportData[];
+  /** Proportion of variance explained per PC (index 0 = PC1), or null if unavailable. */
+  pve: number[] | null;
   /** True while the fetch request is in-flight. Use this to show spinners/skeletons. */
   isLoading: boolean;
 }
@@ -68,7 +70,7 @@ const PcaDataContext = createContext<PcaDataContextValue | undefined>(undefined)
  *  1. Owning the `file` and `subset` query-param state via nuqs.
  *  2. Fetching (and re-fetching when `file` or `subset` changes) via
  *     `fetchPCAPassportData`.
- *  3. Exposing `{ file, setFile, subset, setSubset, rawData, isLoading }` to
+ *  3. Exposing `{ file, setFile, subset, setSubset, rawData, pve, isLoading }` to
  *     any descendant that calls `usePcaData()`.
  */
 export function PcaDataProvider({ children }: { children: React.ReactNode }) {
@@ -99,6 +101,7 @@ export function PcaDataProvider({ children }: { children: React.ReactNode }) {
   };
 
   const [rawData, setRawData] = useState<PCAPassportData[]>([]);
+  const [pve, setPve] = useState<number[] | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   // Re-run whenever `file` or `subset` changes (including on first mount).
@@ -119,15 +122,17 @@ export function PcaDataProvider({ children }: { children: React.ReactNode }) {
           const body = await res.text();
           throw new Error(`Failed to fetch PCA passport data (${res.status}): ${body}`);
         }
-        const data: PCAPassportData[] = await res.json();
+        const payload: { data: PCAPassportData[]; pve: number[] | null } = await res.json();
         if (!controller.signal.aborted) {
-          setRawData(data);
+          setRawData(payload.data);
+          setPve(payload.pve);
         }
       } catch (error) {
         if ((error as Error).name === 'AbortError') return;
         console.error('Error loading PCA passport data:', error);
         if (!controller.signal.aborted) {
           setRawData([]);
+          setPve(null);
         }
       } finally {
         if (!controller.signal.aborted) {
@@ -144,7 +149,7 @@ export function PcaDataProvider({ children }: { children: React.ReactNode }) {
   }, [file, subset]);
 
   return (
-    <PcaDataContext.Provider value={{ file, setFile, subset, setSubset, rawData, isLoading }}>
+    <PcaDataContext.Provider value={{ file, setFile, subset, setSubset, rawData, pve, isLoading }}>
       {children}
     </PcaDataContext.Provider>
   );
@@ -158,7 +163,7 @@ export function PcaDataProvider({ children }: { children: React.ReactNode }) {
  * Call this hook in any client component to access the shared PCA data.
  *
  * @example
- * const { file, setFile, subset, setSubset, rawData, isLoading } = usePcaData();
+ * const { file, setFile, subset, setSubset, rawData, pve, isLoading } = usePcaData();
  *
  * @throws If called outside of a `<PcaDataProvider>` tree.
  */

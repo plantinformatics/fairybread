@@ -15,8 +15,8 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const data = await fetchPCAPassportData(file, subset);
-    return NextResponse.json(data);
+    const result = await fetchPCAPassportData(file, subset);
+    return NextResponse.json(result);
   } catch (error) {
     console.error('Error in /api/pca-passport-data:', error);
     const posthog = getPostHogClient();
