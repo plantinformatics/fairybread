@@ -8,6 +8,7 @@ import { usePcaData } from '@/context/pca-data-context';
 
 import { PcaTable } from '@/components/data-explorer/pca-table';
 import { PcaPlot } from "@/components/data-explorer/pca-plot";
+import { ResizablePlotPanel } from '@/components/data-explorer/resizable-plot-panel';
 import BottomFooter from '@/components/bottom-footer';
 
 export default function Page() {
@@ -27,19 +28,21 @@ export default function Page() {
 
   return (
     <div className="w-full pl-10">
-      <PcaPlot
-      rawData={rawData}
-      isLoading={isLoading}
-      groupBy={groupBy}
-      chartSelection={chartSelection}
-      setChartSelection={setChartSelection}
-      tableFiltered={tableFiltered}
-      setTableFiltered={setTableFiltered}
-      isDarkMode={isDarkMode}
-      palette={palette}
-      pve={pve}
-      />
-      <PcaTable 
+      <ResizablePlotPanel>
+        <PcaPlot
+        rawData={rawData}
+        isLoading={isLoading}
+        groupBy={groupBy}
+        chartSelection={chartSelection}
+        setChartSelection={setChartSelection}
+        tableFiltered={tableFiltered}
+        setTableFiltered={setTableFiltered}
+        isDarkMode={isDarkMode}
+        palette={palette}
+        pve={pve}
+        />
+      </ResizablePlotPanel>
+      <PcaTable
       rawData={rawData} 
       isLoading={isLoading}
       groupBy={groupBy}

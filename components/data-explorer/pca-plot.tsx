@@ -40,10 +40,35 @@ export function PcaPlot({
 }) 
 {
   const graphDivRef = useRef<any>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
   const isSelectionBoundRef = useRef<boolean>(false);
+  const resizeDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [data, setData] = useState<any[]>([]);
   const { pcAxes } = usePreferences();
+
+  // react-plotly.js's `useResizeHandler` only reacts to `window` resize
+  // events, so dragging the resizable panel handle (which resizes this
+  // container without resizing the window) never triggers a redraw.
+  // Watch the container itself and nudge Plotly to resize, debounced so we
+  // don't thrash the chart while the user is actively dragging the handle.
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container || typeof ResizeObserver === "undefined") return;
+
+    const observer = new ResizeObserver(() => {
+      if (resizeDebounceRef.current) clearTimeout(resizeDebounceRef.current);
+      resizeDebounceRef.current = setTimeout(() => {
+        window.dispatchEvent(new Event("resize"));
+      }, 150);
+    });
+    observer.observe(container);
+
+    return () => {
+      observer.disconnect();
+      if (resizeDebounceRef.current) clearTimeout(resizeDebounceRef.current);
+    };
+  }, []);
 
   useEffect(()=>{
     setLoading(true);
@@ -91,7 +116,7 @@ export function PcaPlot({
   const isPlotLoading = isLoading || loading;
 
   return (
-      <div className="relative w-full h-[60vh] max-h-[60vh] py-2 overflow-hidden box-border">
+      <div ref={containerRef} className="relative w-full h-full p-3 overflow-hidden box-border">
         {isPlotLoading && <LoadingOverlay message="Loading plot..." />}
         <Plot
           data={data}
