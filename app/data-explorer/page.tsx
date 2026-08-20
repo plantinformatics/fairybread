@@ -20,14 +20,15 @@ export default function Page() {
   const { isDark: isDarkMode } = useTheme();
 
   const [chartSelection, setChartSelection] = useState<{ IID: string[] }>({
-    IID: []
+    IID: [] 
   });
   const [tableFiltered, setTableFiltered] = useState<{ IID: string[] }>({
     IID: []
   });
 
   return (
-    <div className="w-full pl-10">
+    // pl-2 is used to bring the plot and table in line with the start of the icon
+    <div className="w-full min-w-0 pl-2"> 
       <ResizablePlotPanel>
         <PcaPlot
         rawData={rawData}

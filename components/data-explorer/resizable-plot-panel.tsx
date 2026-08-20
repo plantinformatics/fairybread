@@ -156,10 +156,10 @@ function ResizablePlotPanelInner({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <div className="w-full">
+    <div className="w-full min-w-0">
       <div
         ref={containerRef}
-        className="w-full overflow-hidden"
+        className="w-full min-w-0 overflow-hidden"
         style={{ height: typeof height === "number" ? `${height}px` : height }}
       >
         {children}
@@ -194,5 +194,5 @@ function ResizablePlotPanelInner({ children }: { children: React.ReactNode }) {
  */
 export const ResizablePlotPanel = dynamic(() => Promise.resolve(ResizablePlotPanelInner), {
   ssr: false,
-  loading: () => <div className="w-full" style={{ height: DEFAULT_HEIGHT }} />,
+  loading: () => <div className="w-full min-w-0" style={{ height: DEFAULT_HEIGHT }} />,
 });

@@ -116,7 +116,7 @@ export function PcaPlot({
   const isPlotLoading = isLoading || loading;
 
   return (
-      <div ref={containerRef} className="relative w-full h-full p-3 overflow-hidden box-border">
+      <div ref={containerRef} className="relative w-full h-full min-w-0 overflow-hidden box-border">
         {isPlotLoading && <LoadingOverlay message="Loading plot..." />}
         <Plot
           data={data}
