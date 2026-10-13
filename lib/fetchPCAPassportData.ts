@@ -7,7 +7,7 @@ import { parse } from "csv-parse/sync";
 import { replaceNullsWithMissing } from '@/lib/dataProcessing'
 
 async function fetchAndParsePCAFile(PCAFileURL: string): Promise<any> {
-  const response = await fetch(PCAFileURL, { next: { revalidate: 86400 } }); // one day in seconds
+  const response = await fetch(PCAFileURL, { next: { revalidate: 86400 } }); // one day in seconds, don't forget to align with cacheTimeoutSeconds
   if (!response.ok) {
     const errorText = await response.text();
     console.log(chalk.red(`Error response: ${errorText.substring(0, 200)}`));
@@ -80,7 +80,7 @@ export async function fetchPCAPassportData(PCAFile: string, subset: string = ALL
     const genotypeIds = PCAData.map((p: any) => p.IID);
     
     const maxPassportDataLength = 3000; // keep the size of each page less than 2MB to enable nextJS caching
-    const cacheTimeoutSeconds = 3600; // Cache timeout: 1 hour (3600 seconds)
+    const cacheTimeoutSeconds = 86400; // Cache timeout: 1 day (86400 seconds) - keep in sync with fetchAndParsePCAFile's revalidate above
     const totalSamples = genotypeIds.length;
     const totalPages = Math.ceil(totalSamples / maxPassportDataLength);
     const selectFields = passportDataSelectFields.join(',');
@@ -167,6 +167,19 @@ export async function fetchPCAPassportData(PCAFile: string, subset: string = ALL
       const pca = pcaByIID.get(passport.genotypeID);
       return pca ? [{ ...passport, pca }] : [];
     });
+
+    // The "successfully fetched" log above only reflects the raw passport API
+    // response - it says nothing about whether the join below (which produces
+    // what's actually returned to the frontend) succeeded. Surface that here
+    // so a broken join (e.g. an ID mismatch) can never look identical to a
+    // real success.
+    const droppedInMerge = allPassportData.length - mergedData.length;
+    if (mergedData.length === 0 && allPassportData.length > 0) {
+      console.log(chalk.red(`✗ Merge produced 0 items from ${allPassportData.length} fetched passport records - no passport genotypeID matched a PCA IID. Returning empty data to caller.`));
+    } else if (droppedInMerge > 0) {
+      console.log(chalk.yellow(`⚠ ${droppedInMerge} of ${allPassportData.length} passport records had no matching PCA record and were dropped from the merge`));
+    }
+    console.log(debug(`Returning ${mergedData.length} merged items to caller`));
 
     if (pve) {
       console.log(debug(`PVE loaded: ${pve.length} components`));

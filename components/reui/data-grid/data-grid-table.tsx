@@ -558,7 +558,7 @@ function DataGridTable<TData>() {
         ) : isLoading && props.loadingMode === "spinner" ? (
           // Show spinner loading immediately
           <tr>
-            <td colSpan={table.getVisibleFlatColumns().length} className="p-8">
+            <td colSpan={table.getVisibleFlatColumns().length}>
               <div className="flex items-center justify-center">
                 <svg
                   className="text-muted-foreground mr-3 -ml-1 h-5 w-5 animate-spin"

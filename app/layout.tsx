@@ -43,8 +43,8 @@ function AppFrame({
   return (
     <SidebarProvider defaultOpen={defaultOpen}>
       <AppSidebar />
-      <SidebarInset className="p-2">
-        <div className="sticky top-2 z-50 flex items-center gap-2">
+      <SidebarInset className="min-w-0 overflow-x-hidden pr-3 pl-2"> {/* right is larger to account for the scroll */}
+        <div className="pt-2 pb-2 z-50 flex items-center gap-2">
           <SidebarTrigger className="h-8 w-8" />
           <BreadCrumbNav />
           <div className="ml-auto">
