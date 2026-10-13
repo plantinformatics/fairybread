@@ -7,7 +7,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react
 // never shrink to make room, so this can't reuse `ResizablePanelGroup`
 // (which always trades space between sibling panels). Instead this just
 // grows/shrinks its own height directly, independent of everything below it.
-const DEFAULT_HEIGHT = "60vh";
+export const DEFAULT_PLOT_HEIGHT = "60vh";
 const MIN_HEIGHT_PX = 280;
 // Leaves a sliver of breathing room at the bottom of the viewport instead
 // of the panel touching the very edge.
@@ -38,7 +38,7 @@ function readStoredHeight(): number | null {
 function ResizablePlotPanelInner({ children }: { children: React.ReactNode }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const dragStartRef = useRef<{ startY: number; startHeight: number } | null>(null);
-  const [height, setHeight] = useState<number | string>(() => readStoredHeight() ?? DEFAULT_HEIGHT);
+  const [height, setHeight] = useState<number | string>(() => readStoredHeight() ?? DEFAULT_PLOT_HEIGHT);
   const [isDragging, setIsDragging] = useState(false);
   // Mirrors the container's actual rendered height in pixels, for use in
   // aria-valuenow and keyboard stepping. Refs can't be read during render,
@@ -151,7 +151,7 @@ function ResizablePlotPanelInner({ children }: { children: React.ReactNode }) {
   );
 
   const resetHeight = useCallback(() => {
-    setHeight(DEFAULT_HEIGHT);
+    setHeight(DEFAULT_PLOT_HEIGHT);
     window.localStorage.removeItem(HEIGHT_STORAGE_KEY);
   }, []);
 
@@ -194,5 +194,5 @@ function ResizablePlotPanelInner({ children }: { children: React.ReactNode }) {
  */
 export const ResizablePlotPanel = dynamic(() => Promise.resolve(ResizablePlotPanelInner), {
   ssr: false,
-  loading: () => <div className="w-full min-w-0" style={{ height: DEFAULT_HEIGHT }} />,
+  loading: () => <div className="w-full min-w-0" style={{ height: DEFAULT_PLOT_HEIGHT }} />,
 });

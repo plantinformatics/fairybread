@@ -8,7 +8,7 @@ import { usePcaData } from '@/context/pca-data-context';
 
 import { PcaTable } from '@/components/data-explorer/pca-table';
 import { PcaPlot } from "@/components/data-explorer/pca-plot";
-import { ResizablePlotPanel } from '@/components/data-explorer/resizable-plot-panel';
+import { DEFAULT_PLOT_HEIGHT, ResizablePlotPanel } from '@/components/data-explorer/resizable-plot-panel';
 import BottomFooter from '@/components/bottom-footer';
 
 export default function Page() {
@@ -16,7 +16,7 @@ export default function Page() {
   const { rawData, isLoading, pve } = usePcaData();
 
   const [groupBy, setGroupBy] = useQueryState("groupBy", parseAsString.withDefault("subRegion"));
-  const { palette } = usePreferences();
+  const { palette, resizablePlot } = usePreferences();
   const { isDark: isDarkMode } = useTheme();
 
   const [chartSelection, setChartSelection] = useState<{ IID: string[] }>({
@@ -29,7 +29,7 @@ export default function Page() {
   return (
     // pl-2 is used to bring the plot and table in line with the start of the icon
     <div className="w-full min-w-0 pl-2"> 
-      <ResizablePlotPanel>
+      <PlotPanel resizable={resizablePlot}>
         <PcaPlot
         rawData={rawData}
         isLoading={isLoading}
@@ -42,7 +42,7 @@ export default function Page() {
         palette={palette}
         pve={pve}
         />
-      </ResizablePlotPanel>
+      </PlotPanel>
       <PcaTable
       rawData={rawData} 
       isLoading={isLoading}
@@ -56,4 +56,10 @@ export default function Page() {
       <BottomFooter></BottomFooter>
     </div>
   );
+}
+
+/** Drag-to-resize panel when enabled in advanced settings, otherwise a fixed default height. */
+function PlotPanel({ resizable, children }: { resizable: boolean; children: React.ReactNode }) {
+  if (resizable) return <ResizablePlotPanel>{children}</ResizablePlotPanel>;
+  return <div className="w-full min-w-0" style={{ height: DEFAULT_PLOT_HEIGHT }}>{children}</div>;
 }

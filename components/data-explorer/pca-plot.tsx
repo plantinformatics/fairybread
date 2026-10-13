@@ -45,7 +45,7 @@ export function PcaPlot({
   const resizeDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [data, setData] = useState<any[]>([]);
-  const { pcAxes } = usePreferences();
+  const { pcAxes, squarePlot } = usePreferences();
 
   // react-plotly.js's `useResizeHandler` only reacts to `window` resize
   // events, so dragging the resizable panel handle (which resizes this
@@ -80,8 +80,8 @@ export function PcaPlot({
 
   // Used because dark mode needs to be an explicit theme change for plotly
   const dynamicLayout = useMemo(() => {
-    return buildChartLayout(isDarkMode, palette, pcAxes, pve);
-  }, [palette, isDarkMode, pcAxes, pve]);
+    return buildChartLayout(isDarkMode, palette, pcAxes, pve, squarePlot);
+  }, [palette, isDarkMode, pcAxes, pve, squarePlot]);
 
   const handleSelected = useCallback((eventData: any) => {
     if (eventData?.points?.length > 0) {

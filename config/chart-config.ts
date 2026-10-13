@@ -88,6 +88,8 @@ export function buildChartLayout(
   palette: string,
   pcAxes: PcAxes,
   pve: number[] | null = null,
+  // Lock axes to equal units (1 unit of PC x == 1 unit of PC y on screen).
+  equalAxisScale = false,
 ) {
   const { height: _defaultHeight, ...baseLayout } = chartLayout;
   const theme = isDarkMode ? chartThemeStyles.dark : chartThemeStyles.light;
@@ -105,6 +107,9 @@ export function buildChartLayout(
     color: theme.axisColor,
     gridcolor: theme.gridColor,
     zerolinecolor: theme.zeroLineColor,
+    // Plotly widens whichever axis range is needed to keep units equal, so
+    // the plot still fills the panel.
+    ...(equalAxisScale && { scaleanchor: "x" as const, scaleratio: 1 }),
   };
 
   return {
@@ -123,6 +128,8 @@ export function buildChartLayout(
     // `scene.*axis` rather than the top-level `xaxis`/`yaxis` above.
     ...(pcAxes.z && {
       scene: {
+        // "data" keeps all three axes in equal units; "auto" is Plotly's default.
+        aspectmode: equalAxisScale ? ("data" as const) : ("auto" as const),
         xaxis,
         yaxis,
         zaxis: {

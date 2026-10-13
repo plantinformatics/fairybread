@@ -19,6 +19,10 @@ export default function SettingsPage() {
     setAdvancedPlotSettings,
     pcAxes,
     setPcAxes,
+    resizablePlot,
+    setResizablePlot,
+    squarePlot,
+    setSquarePlot,
   } = usePreferences();
   const swatches = chartColourPalettes.get(palette) ?? [];
 
@@ -93,8 +97,8 @@ export default function SettingsPage() {
               Advanced plot settings
             </label>
             <p className="mt-1 text-sm text-muted-foreground">
-              Pick which principal components are plotted. Add a third
-              component to render a 3D PCA.
+              Pick which principal components are plotted, add a third
+              component to render a 3D PCA, and control the plot size.
             </p>
           </div>
           <Switch
@@ -108,6 +112,7 @@ export default function SettingsPage() {
         </div>
 
         {advancedPlotSettings && (
+          <>
           <div className="mt-5 grid gap-4 sm:grid-cols-3">
             <div>
               <label className="mb-2 block text-sm font-medium">X axis</label>
@@ -163,6 +168,36 @@ export default function SettingsPage() {
               </Select>
             </div>
           </div>
+
+          <div className="mt-5 grid gap-3">
+            <div className="flex items-center justify-between gap-4">
+              <label htmlFor="resizable-plot" className="text-sm font-medium">
+                Resizable plot height
+              </label>
+              <Switch
+                id="resizable-plot"
+                checked={resizablePlot}
+                onCheckedChange={(enabled) => {
+                  posthog.capture('resizable_plot_toggled', { enabled });
+                  setResizablePlot(enabled);
+                }}
+              />
+            </div>
+            <div className="flex items-center justify-between gap-4">
+              <label htmlFor="square-plot" className="text-sm font-medium">
+                Lock plot aspect ratio to 1:1
+              </label>
+              <Switch
+                id="square-plot"
+                checked={squarePlot}
+                onCheckedChange={(enabled) => {
+                  posthog.capture('square_plot_toggled', { enabled });
+                  setSquarePlot(enabled);
+                }}
+              />
+            </div>
+          </div>
+          </>
         )}
       </div>
     </div>

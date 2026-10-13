@@ -45,6 +45,14 @@ const DEFAULT_PC_AXES: PcAxes = { x: 'PC1', y: 'PC2', z: null };
 
 const ADVANCED_PLOT_SETTINGS_STORAGE_KEY = 'pca-plot-advanced-settings';
 const PC_AXES_STORAGE_KEY = 'pca-plot-pc-axes';
+const RESIZABLE_PLOT_STORAGE_KEY = 'pca-plot-resizable';
+const SQUARE_PLOT_STORAGE_KEY = 'pca-plot-square';
+
+/** Read a stored `"true"`/`"false"` flag, or `null` if missing/invalid. */
+const readStoredBoolean = (key: string): boolean | null => {
+  const raw = window.localStorage.getItem(key);
+  return raw === 'true' || raw === 'false' ? raw === 'true' : null;
+};
 
 /** Coerce an unknown value to a `PcAxis`, returning `fallback` if invalid. */
 const coercePcAxis = (value: unknown, fallback: PcAxis): PcAxis => {
@@ -94,6 +102,12 @@ interface PreferencesContextValue {
   setPcAxes: (
     update: PcAxes | ((prev: PcAxes) => PcAxes),
   ) => void;
+  /** Whether the plot shows a drag handle to resize its height. Off unless advanced is on. */
+  resizablePlot: boolean;
+  setResizablePlot: (enabled: boolean) => void;
+  /** Whether the plot axes are locked to equal units (1:1). Off unless advanced is on. */
+  squarePlot: boolean;
+  setSquarePlot: (enabled: boolean) => void;
   /**
    * True once the provider has read localStorage on the client. Consumers
    * that care about avoiding a flash of default values can gate on this.
@@ -133,6 +147,8 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
     DEFAULT_ADVANCED_PLOT_SETTINGS,
   );
   const [pcAxes, setPcAxes] = useState<PcAxes>(DEFAULT_PC_AXES);
+  const [resizablePlot, setResizablePlot] = useState<boolean>(false);
+  const [squarePlot, setSquarePlot] = useState<boolean>(false);
   const [isHydrated, setIsHydrated] = useState<boolean>(false);
 
   useEffect(() => {
@@ -143,10 +159,14 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
       setPalette(savedPalette);
     }
 
-    const savedAdvanced = window.localStorage.getItem(ADVANCED_PLOT_SETTINGS_STORAGE_KEY);
-    if (savedAdvanced === 'true' || savedAdvanced === 'false') {
-      setAdvancedPlotSettings(savedAdvanced === 'true');
-    }
+    const savedAdvanced = readStoredBoolean(ADVANCED_PLOT_SETTINGS_STORAGE_KEY);
+    if (savedAdvanced !== null) setAdvancedPlotSettings(savedAdvanced);
+
+    const savedResizable = readStoredBoolean(RESIZABLE_PLOT_STORAGE_KEY);
+    if (savedResizable !== null) setResizablePlot(savedResizable);
+
+    const savedSquare = readStoredBoolean(SQUARE_PLOT_STORAGE_KEY);
+    if (savedSquare !== null) setSquarePlot(savedSquare);
 
     const savedPcAxes = parseStoredPcAxes(
       window.localStorage.getItem(PC_AXES_STORAGE_KEY),
@@ -179,8 +199,15 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
     window.localStorage.setItem(PC_AXES_STORAGE_KEY, JSON.stringify(pcAxes));
   }, [isHydrated, pcAxes]);
 
-  // Effective axes: fall back to defaults when advanced settings are off so
-  // the plot renders the standard PC1/PC2 2D view.
+  useEffect(() => {
+    if (!isHydrated) return;
+    window.localStorage.setItem(RESIZABLE_PLOT_STORAGE_KEY, String(resizablePlot));
+    window.localStorage.setItem(SQUARE_PLOT_STORAGE_KEY, String(squarePlot));
+  }, [isHydrated, resizablePlot, squarePlot]);
+
+  // Effective values: fall back to defaults when advanced settings are off so
+  // the plot renders the standard PC1/PC2 2D view at a fixed size. Stored
+  // choices are kept and reappear when advanced is re-enabled.
   const effectivePcAxes: PcAxes = advancedPlotSettings ? pcAxes : DEFAULT_PC_AXES;
 
   // --- Provide value to the tree ------------------------------------------
@@ -193,6 +220,10 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
         setAdvancedPlotSettings,
         pcAxes: effectivePcAxes, // grabs calcuated value above
         setPcAxes,
+        resizablePlot: advancedPlotSettings && resizablePlot,
+        setResizablePlot,
+        squarePlot: advancedPlotSettings && squarePlot,
+        setSquarePlot,
         isHydrated,
       }}
     >
