@@ -37,3 +37,27 @@ I want to share some of preferences so we can be more aligned when we work toget
 
 - Standing constrants: dark mode, true back (#000) background, white primary text. Information-dense, no decorative card/pill, no chrome, no light-grey subtitle lines above sections. Minimal copy. No em dashes.
 - Avoid continuously repainting CSS animations (pulse, shimmer, blur, spinners); they peg the GPU on high refrsh displays
+
+## Project map
+
+Next.js 16 App Router, React 19, Tailwind 4, shadcn/reui components, Plotly, TanStack Table, nuqs for URL state.
+
+Data flow:
+1. `context/pca-data-context.tsx` reads `?file=` / `?subset=` and calls `GET /api/pca-passport-data`
+2. `app/api/pca-passport-data/route.ts` calls `lib/fetchPCAPassportData.ts`
+3. That fetches the PCA TSV (URLs in `config/pca-location-config.ts`), pages genotype IDs to the Genolink API, and merges passport rows with PCA rows by genotype ID. Cached for a day via Next fetch cache / `unstable_cache`
+4. Merged rows feed the plot (`components/data-explorer/pca-plot.tsx`, traces from `lib/dataProcessing.ts`) and table (`components/data-explorer/pca-table.tsx`, filtering in `lib/filter-engine.ts` + `hooks/use-table-filters.ts`)
+
+Where things live:
+- `app/data-explorer`, `app/custom-list`, `app/settings`: real pages. Other `app/*` pages are component demos
+- `config/`: crops and datasets, table columns and filters (columns drive the Genolink `select` param), chart palettes
+- `context/`: shared client state (data, preferences, custom list, theme)
+- `lib/`: pure logic. New logic that can be pure should go here with a colocated `*.test.ts`
+- `components/ui`, `components/reui`: vendored component libraries. Avoid editing unless fixing a bug in them
+- README covers adding crops, subsets and passport fields
+
+## Before calling a change done
+
+- `bun run check` (typecheck + tests) must pass. CI also runs `bun run build`
+- `bun run lint` has pre-existing `no-explicit-any` errors. Don't add new ones
+- Keep each feature to one PR so it can be undone with a single `git revert`
