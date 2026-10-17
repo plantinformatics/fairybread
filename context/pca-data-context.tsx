@@ -22,10 +22,17 @@ import { useQueryState, parseAsString } from 'nuqs';
 import posthog from 'posthog-js';
 import type { PCAPassportData } from '@/config/table-and-filter-config';
 import { ALL_ACCESSIONS_SUBSET } from '@/config/pca-location-config';
+import { readJsonWithProgress } from '@/lib/read-json-with-progress';
 
 // ---------------------------------------------------------------------------
 // Shape of the value stored in the context
 // ---------------------------------------------------------------------------
+
+/**
+ * Where an in-flight load is. `fetching` while the server gathers data (slow on a
+ * cold cache), `downloading` once the body streams in. `percent` steps by 5.
+ */
+export type LoadProgress = { stage: 'fetching' } | { stage: 'downloading'; percent: number };
 
 /**
  * Everything a consumer can read from (or write to) the shared PCA data store.
@@ -43,8 +50,10 @@ interface PcaDataContextValue {
   rawData: PCAPassportData[];
   /** Proportion of variance explained per PC (index 0 = PC1), or null if unavailable. */
   pve: number[] | null;
-  /** True while the fetch request is in-flight. Use this to show spinners/skeletons. */
+  /** True while the fetch request is in-flight. Use this to show skeletons. */
   isLoading: boolean;
+  /** Progress of the in-flight load, or null when idle. See `DataLoadStatus`. */
+  progress: LoadProgress | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -70,7 +79,7 @@ const PcaDataContext = createContext<PcaDataContextValue | undefined>(undefined)
  *  1. Owning the `file` and `subset` query-param state via nuqs.
  *  2. Fetching (and re-fetching when `file` or `subset` changes) via
  *     `fetchPCAPassportData`.
- *  3. Exposing `{ file, setFile, subset, setSubset, rawData, pve, isLoading }` to
+ *  3. Exposing `{ file, setFile, subset, setSubset, rawData, pve, isLoading, progress }` to
  *     any descendant that calls `usePcaData()`.
  */
 export function PcaDataProvider({ children }: { children: React.ReactNode }) {
@@ -102,7 +111,8 @@ export function PcaDataProvider({ children }: { children: React.ReactNode }) {
 
   const [rawData, setRawData] = useState<PCAPassportData[]>([]);
   const [pve, setPve] = useState<number[] | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [progress, setProgress] = useState<LoadProgress | null>({ stage: 'fetching' });
+  const isLoading = progress !== null;
 
   // Re-run whenever `file` or `subset` changes (including on first mount).
   // The AbortController prevents a stale fetch from overwriting state if
@@ -111,7 +121,7 @@ export function PcaDataProvider({ children }: { children: React.ReactNode }) {
     const controller = new AbortController();
 
     async function loadData() {
-      setIsLoading(true);
+      setProgress({ stage: 'fetching' });
 
       try {
         const res = await fetch(
@@ -122,7 +132,17 @@ export function PcaDataProvider({ children }: { children: React.ReactNode }) {
           const body = await res.text();
           throw new Error(`Failed to fetch PCA passport data (${res.status}): ${body}`);
         }
-        const payload: { data: PCAPassportData[]; pve: number[] | null } = await res.json();
+        // Only update on 5% steps so a large body doesn't re-render consumers per chunk.
+        let lastPercent = -1;
+        const payload = await readJsonWithProgress<{ data: PCAPassportData[]; pve: number[] | null }>(
+          res,
+          (fraction) => {
+            const percent = Math.floor(fraction * 20) * 5;
+            if (percent === lastPercent || controller.signal.aborted) return;
+            lastPercent = percent;
+            setProgress({ stage: 'downloading', percent });
+          },
+        );
         if (!controller.signal.aborted) {
           setRawData(payload.data);
           setPve(payload.pve);
@@ -136,7 +156,7 @@ export function PcaDataProvider({ children }: { children: React.ReactNode }) {
         }
       } finally {
         if (!controller.signal.aborted) {
-          setIsLoading(false);
+          setProgress(null);
         }
       }
     }
@@ -149,7 +169,7 @@ export function PcaDataProvider({ children }: { children: React.ReactNode }) {
   }, [file, subset]);
 
   return (
-    <PcaDataContext.Provider value={{ file, setFile, subset, setSubset, rawData, pve, isLoading }}>
+    <PcaDataContext.Provider value={{ file, setFile, subset, setSubset, rawData, pve, isLoading, progress }}>
       {children}
     </PcaDataContext.Provider>
   );
@@ -163,7 +183,7 @@ export function PcaDataProvider({ children }: { children: React.ReactNode }) {
  * Call this hook in any client component to access the shared PCA data.
  *
  * @example
- * const { file, setFile, subset, setSubset, rawData, pve, isLoading } = usePcaData();
+ * const { file, setFile, subset, setSubset, rawData, pve, isLoading, progress } = usePcaData();
  *
  * @throws If called outside of a `<PcaDataProvider>` tree.
  */
