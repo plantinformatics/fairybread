@@ -13,7 +13,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
-  Loader2,
   ListChecks,
   X,
   Sprout,
@@ -24,6 +23,7 @@ import {
 } from 'lucide-react';
 import { parseInput, matchTerms } from '@/lib/customListParseMatch'
 import { useCustomList } from '@/context/custom-list-context';
+import { DataLoadStatus } from '@/components/data-load-status';
 import posthog from 'posthog-js';
 // ---------------------------------------------------------------------------
 // Page
@@ -153,9 +153,8 @@ export default function CustomListPage() {
 
         <div className="px-5 py-4">
           {isLoading ? (
-            <div className="flex h-32 items-center justify-center gap-2 text-sm text-muted-foreground">
-              <Loader2 className="size-4 animate-spin" />
-              Loading {file} data…
+            <div className="flex h-32 items-center justify-center text-sm text-muted-foreground">
+              <DataLoadStatus />
             </div>
           ) : (
             <>

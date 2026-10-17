@@ -7,6 +7,7 @@ import { buildGroupedEntries, createPlotData } from "@/lib/dataProcessing";
 import { chartConfig, buildChartLayout } from "@/config/chart-config";
 import type { PCAPassportData } from "@/config/table-and-filter-config";
 import { LoadingOverlay } from "@/components/data-explorer/pca-plot-loading-overlay";
+import { DataLoadStatus } from "@/components/data-load-status";
 import { usePreferences } from "@/context/preferences-context";
 
 const Plot = dynamic(() => import("react-plotly.js"), {
@@ -117,7 +118,9 @@ export function PcaPlot({
 
   return (
       <div ref={containerRef} className="relative w-full h-full min-w-0 overflow-hidden box-border">
-        {isPlotLoading && <LoadingOverlay message="Loading plot..." />}
+        {isPlotLoading && (
+          <LoadingOverlay>{isLoading ? <DataLoadStatus /> : "Loading plot..."}</LoadingOverlay>
+        )}
         <Plot
           data={data}
           layout={dynamicLayout}
