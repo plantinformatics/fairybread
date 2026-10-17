@@ -9,6 +9,7 @@ import { usePcaData } from '@/context/pca-data-context';
 import { PcaTable } from '@/components/data-explorer/pca-table';
 import { PcaPlot } from "@/components/data-explorer/pca-plot";
 import { DEFAULT_PLOT_HEIGHT, ResizablePlotPanel } from '@/components/data-explorer/resizable-plot-panel';
+import { CustomListConflictDialog } from '@/components/data-explorer/custom-list-conflict-dialog';
 import BottomFooter from '@/components/bottom-footer';
 
 export default function Page() {
@@ -54,6 +55,7 @@ export default function Page() {
       setTableFiltered={setTableFiltered} 
       />
       <BottomFooter></BottomFooter>
+      <CustomListConflictDialog isPlotReady={!isLoading && rawData.length > 0} />
     </div>
   );
 }
