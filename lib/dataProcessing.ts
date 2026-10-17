@@ -6,9 +6,7 @@ export function extractSortAndFilter(PCAPassportData: any[], groupingValue: stri
     // extract null entries
     const missing = groupedPCAPassport["N/A"] || [];
     delete groupedPCAPassport["N/A"];
-    console.log("this is the grouped PCAPassport", groupedPCAPassport);
     const sorted = Object.entries(groupedPCAPassport).sort((a: any, b: any) => b[1].length - a[1].length);
-    console.log("this is the sorted grouped PCAPassport", sorted);
     // extract only the largest groups and assign the rest to the "Other" group
     const top = sorted.slice(0, numberOfEntries);
     const rest = sorted.slice(numberOfEntries).flatMap(([, arr]: any) => arr);
