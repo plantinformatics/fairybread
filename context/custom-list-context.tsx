@@ -9,6 +9,8 @@ const PALETTE_STORAGE_KEY = 'pca-custom-list-ids';
 interface CustomListContextValue {
     customList: string[];
     setCustomList: (f: string[]) => void;
+    /** False until the stored list has been read from localStorage. */
+    isHydrated: boolean;
 }
 
 const CostomListContext = createContext<CustomListContextValue | undefined>(undefined);
@@ -41,7 +43,7 @@ export function CustomListProvider({ children }: { children: React.ReactNode }) 
         window.localStorage.setItem(PALETTE_STORAGE_KEY, JSON.stringify(customList));
       }, [isHydrated, customList]);
 
-    return <CostomListContext.Provider value={ {customList, setCustomList} }>
+    return <CostomListContext.Provider value={ {customList, setCustomList, isHydrated} }>
         { children }
     </CostomListContext.Provider>
 }

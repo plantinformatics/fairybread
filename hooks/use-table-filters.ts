@@ -52,6 +52,17 @@ const toQueryStates = (
   return next
 }
 
+// Compares two query-state maps, treating `[]` and `null` as equal.
+const sameQueryStates = (
+  a: Record<string, string[] | null>,
+  b: Record<string, string[] | null>
+): boolean =>
+  Object.keys({ ...a, ...b }).every((key) => {
+    const left = a[key] ?? []
+    const right = b[key] ?? []
+    return left.length === right.length && left.every((value, i) => value === right[i])
+  })
+
 export function useTableFilters<TRow extends Record<string, unknown>>({
   tableData,
   fields,
@@ -113,6 +124,24 @@ export function useTableFilters<TRow extends Record<string, unknown>>({
 
     return () => clearTimeout(timer)
   }, [filters, appliedFilters, debounceMs, queryStateKeys, setQueryStates])
+
+  // Adopt URL changes made outside this hook (e.g. the custom list conflict
+  // dialog, or browser back/forward). Our own debounced writes always match
+  // `appliedFilters`, so they're skipped. Read via a ref so this only reacts to
+  // the URL changing, not to `appliedFilters` changing ahead of it.
+  const appliedFiltersRef = useRef(appliedFilters)
+  useEffect(() => {
+    appliedFiltersRef.current = appliedFilters
+  }, [appliedFilters])
+
+  useEffect(() => {
+    const current = toQueryStates(appliedFiltersRef.current, queryStateKeys)
+    if (sameQueryStates(current, queryStates)) return
+    const next = filtersFromQueryStates(queryStates, fieldsMap)
+    setFilters(next)
+    setAppliedFilters(next)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [queryStates])
 
   const filteredData = useMemo(() => {
     // Remap filter.field to the field's dataKey (if provided) so the engine
