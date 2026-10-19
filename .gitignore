@@ -26,6 +26,8 @@
 /src/app/data/logs
 
 # debug
+*.log
+/logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
