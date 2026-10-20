@@ -22,6 +22,7 @@ import { useQueryState, parseAsString } from 'nuqs';
 import posthog from 'posthog-js';
 import type { PCAPassportData } from '@/config/table-and-filter-config';
 import { ALL_ACCESSIONS_SUBSET } from '@/config/pca-location-config';
+import { splitNdjsonLines, type LoadProgress, type PcaDataStreamEvent } from '@/lib/load-progress';
 
 // ---------------------------------------------------------------------------
 // Shape of the value stored in the context
@@ -45,6 +46,8 @@ interface PcaDataContextValue {
   pve: number[] | null;
   /** True while the fetch request is in-flight. Use this to show spinners/skeletons. */
   isLoading: boolean;
+  /** Latest server-reported loading step, or null before the first one arrives. */
+  loadProgress: LoadProgress | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -70,7 +73,7 @@ const PcaDataContext = createContext<PcaDataContextValue | undefined>(undefined)
  *  1. Owning the `file` and `subset` query-param state via nuqs.
  *  2. Fetching (and re-fetching when `file` or `subset` changes) via
  *     `fetchPCAPassportData`.
- *  3. Exposing `{ file, setFile, subset, setSubset, rawData, pve, isLoading }` to
+ *  3. Exposing `{ file, setFile, subset, setSubset, rawData, pve, isLoading, loadProgress }` to
  *     any descendant that calls `usePcaData()`.
  */
 export function PcaDataProvider({ children }: { children: React.ReactNode }) {
@@ -106,6 +109,7 @@ export function PcaDataProvider({ children }: { children: React.ReactNode }) {
   const [rawData, setRawData] = useState<PCAPassportData[]>([]);
   const [pve, setPve] = useState<number[] | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [loadProgress, setLoadProgress] = useState<LoadProgress | null>(null);
 
   // Re-run whenever `file` or `subset` changes (including on first mount).
   // The AbortController prevents a stale fetch from overwriting state if
@@ -115,6 +119,7 @@ export function PcaDataProvider({ children }: { children: React.ReactNode }) {
 
     async function loadData() {
       setIsLoading(true);
+      setLoadProgress(null);
 
       try {
         const params = new URLSearchParams({ file, subset });
@@ -123,14 +128,50 @@ export function PcaDataProvider({ children }: { children: React.ReactNode }) {
           signal: controller.signal,
           cache: noCache ? 'no-store' : 'default',
         });
-        if (!res.ok) {
+        if (!res.ok || !res.body) {
           const body = await res.text();
           throw new Error(`Failed to fetch PCA passport data (${res.status}): ${body}`);
         }
-        const payload: { data: PCAPassportData[]; pve: number[] | null } = await res.json();
+
+        // The response is NDJSON: progress events, then a single (large) result line.
+        const reader = res.body.pipeThrough(new TextDecoderStream()).getReader();
+        let pending: string[] = [];
+        let pendingLength = 0;
+        let download: { totalBytes: number } | null = null;
+        let result: Extract<PcaDataStreamEvent, { type: 'result' }> | null = null;
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          // Only re-split when the chunk ends a line, so the multi-MB result
+          // line isn't rescanned on every chunk.
+          if (!value.includes('\n')) {
+            pending.push(value);
+            pendingLength += value.length;
+          } else {
+            const { lines, rest } = splitNdjsonLines(pending.join('') + value);
+            pending = [rest];
+            pendingLength = rest.length;
+            for (const line of lines) {
+              const event = JSON.parse(line) as PcaDataStreamEvent;
+              if (event.type === 'error') throw new Error(event.error);
+              if (event.type === 'result') result = event;
+              else {
+                if (event.progress.stage === 'downloading') download = { totalBytes: event.progress.totalBytes };
+                setLoadProgress(event.progress);
+              }
+            }
+          }
+          if (download && !result) {
+            setLoadProgress({ stage: 'downloading', receivedBytes: pendingLength, totalBytes: download.totalBytes });
+          }
+        }
+
+        if (!result) throw new Error('PCA passport data stream ended without a result');
         if (!controller.signal.aborted) {
-          setRawData(payload.data);
-          setPve(payload.pve);
+          setRawData(result.data);
+          setPve(result.pve);
         }
       } catch (error) {
         if ((error as Error).name === 'AbortError') return;
@@ -154,7 +195,7 @@ export function PcaDataProvider({ children }: { children: React.ReactNode }) {
   }, [file, subset, noCache]);
 
   return (
-    <PcaDataContext.Provider value={{ file, setFile, subset, setSubset, rawData, pve, isLoading }}>
+    <PcaDataContext.Provider value={{ file, setFile, subset, setSubset, rawData, pve, isLoading, loadProgress }}>
       {children}
     </PcaDataContext.Provider>
   );
@@ -168,7 +209,7 @@ export function PcaDataProvider({ children }: { children: React.ReactNode }) {
  * Call this hook in any client component to access the shared PCA data.
  *
  * @example
- * const { file, setFile, subset, setSubset, rawData, pve, isLoading } = usePcaData();
+ * const { file, setFile, subset, setSubset, rawData, pve, isLoading, loadProgress } = usePcaData();
  *
  * @throws If called outside of a `<PcaDataProvider>` tree.
  */

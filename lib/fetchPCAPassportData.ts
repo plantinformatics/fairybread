@@ -5,6 +5,7 @@ import chalk from 'chalk';
 import { parse } from "csv-parse/sync";
 
 import { replaceNullsWithMissing } from '@/lib/dataProcessing'
+import type { LoadProgress } from '@/lib/load-progress'
 
 const GENOLINK_QUERY_URL = 'https://genolink.plantinformatics.io/api/genesys/accession/query';
 
@@ -95,12 +96,14 @@ export type PCAPassportFetchResult = {
 export type FetchPCAPassportOptions = {
   /** Skip every cache layer (PCA/PVE file fetch cache and per-page unstable_cache). For performance testing. */
   noCache?: boolean;
+  /** Called as each loading step starts and as each Genolink page arrives. */
+  onProgress?: (progress: LoadProgress) => void;
 };
 
 export async function fetchPCAPassportData(
   PCAFile: string,
   subset: string = ALL_ACCESSIONS_SUBSET,
-  { noCache = false }: FetchPCAPassportOptions = {},
+  { noCache = false, onProgress = () => {} }: FetchPCAPassportOptions = {},
 ): Promise<PCAPassportFetchResult> {
   try {
     const debug = chalk.blue;
@@ -113,6 +116,8 @@ export async function fetchPCAPassportData(
     if (!fileInfo) {
       throw new Error('Invalid PCA file');
     }
+
+    onProgress({ stage: 'pca-file' });
 
     const pcaStart = performance.now();
     const [PCAData, pve] = await Promise.all([
@@ -136,6 +141,9 @@ export async function fetchPCAPassportData(
     // Fetch all pages concurrently. Each page is wrapped in unstable_cache for
     // POST request caching, unless caching is disabled for performance testing.
     const passportStart = performance.now();
+    let pagesDone = 0;
+    let received = 0;
+    onProgress({ stage: 'passport', pagesDone, totalPages, received, totalSamples });
     const pages = await Promise.all(
       Array.from({ length: totalPages }, async (_, pageNumber) => {
         const startTime = performance.now();
@@ -159,6 +167,10 @@ export async function fetchPCAPassportData(
         const pageSizeKB = (pageSizeBytes / 1024).toFixed(2);
         const pageSizeMB = (pageSizeBytes / (1024 * 1024)).toFixed(2);
 
+        pagesDone += 1;
+        received += pageContent.length;
+        onProgress({ stage: 'passport', pagesDone, totalPages, received, totalSamples });
+
         console.log(chalk.green(`✓ Page ${pageNumber + 1}/${totalPages} received: ${pageContent.length} items (${pageSizeKB} KB / ${pageSizeMB} MB) in ${requestDuration}s`));
         return pageContent;
       })
@@ -176,6 +188,7 @@ export async function fetchPCAPassportData(
       console.log(chalk.green(`✓ All ${totalSamples} samples have passport data`));
     }
 
+    onProgress({ stage: 'merging', totalSamples });
     const pcaByIID = new Map(PCAData.map((p: any) => [p.IID, p]));
     const mergedData = allPassportData.flatMap((passport: any) => {
       const pca = pcaByIID.get(passport.genotypeID);
