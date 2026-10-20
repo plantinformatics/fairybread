@@ -6,8 +6,15 @@ import { parse } from "csv-parse/sync";
 
 import { replaceNullsWithMissing } from '@/lib/dataProcessing'
 
-async function fetchAndParsePCAFile(PCAFileURL: string): Promise<any> {
-  const response = await fetch(PCAFileURL, { next: { revalidate: 86400 } }); // one day in seconds, don't forget to align with cacheTimeoutSeconds
+const GENOLINK_QUERY_URL = 'https://genolink.plantinformatics.io/api/genesys/accession/query';
+
+/** Fetch options for the upstream file fetches. `noCache` bypasses the Next fetch cache entirely. */
+function fileFetchOptions(noCache: boolean): RequestInit {
+  return noCache ? { cache: 'no-store' } : { next: { revalidate: 86400 } }; // one day in seconds, don't forget to align with cacheTimeoutSeconds
+}
+
+async function fetchAndParsePCAFile(PCAFileURL: string, noCache: boolean): Promise<any> {
+  const response = await fetch(PCAFileURL, fileFetchOptions(noCache));
   if (!response.ok) {
     const errorText = await response.text();
     console.log(chalk.red(`Error response: ${errorText.substring(0, 200)}`));
@@ -28,9 +35,9 @@ async function fetchAndParsePCAFile(PCAFileURL: string): Promise<any> {
  * Fetches a one-value-per-line PVE file (proportions for PC1, PC2, …).
  * Returns null on any failure so PCA loading is never blocked by a missing PVE file.
  */
-async function fetchAndParsePveFile(pveFileUrl: string): Promise<number[] | null> {
+async function fetchAndParsePveFile(pveFileUrl: string, noCache: boolean): Promise<number[] | null> {
   try {
-    const response = await fetch(pveFileUrl, { next: { revalidate: 86400 } });
+    const response = await fetch(pveFileUrl, fileFetchOptions(noCache));
     if (!response.ok) {
       console.log(chalk.yellow(`⚠ PVE file fetch failed (${response.status}): ${pveFileUrl}`));
       return null;
@@ -53,104 +60,111 @@ async function fetchAndParsePveFile(pveFileUrl: string): Promise<number[] | null
   }
 }
 
+/** Fetches one page of passport data from Genolink for the given genotype IDs. */
+async function fetchPassportPage(pageNum: number, ids: string[], selectFields: string, pageSize: number): Promise<{ content?: Record<string, unknown>[] }> {
+  const queryParams = new URLSearchParams({
+    select: selectFields,
+    l: String(pageSize),
+    p: String(pageNum),
+  });
+  const response = await fetch(`${GENOLINK_QUERY_URL}?${queryParams.toString()}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    },
+    body: JSON.stringify({ genotypeIds: ids }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.log(chalk.red(`Error fetching page ${pageNum}: HTTP ${response.status}`));
+    console.log(chalk.red(`Error response: ${errorText.substring(0, 200)}`));
+    throw new Error(`Failed to fetch page ${pageNum}: HTTP ${response.status} - ${response.statusText}`);
+  }
+
+  return await response.json();
+}
+
 export type PCAPassportFetchResult = {
   data: any[];
   /** Proportion of variance explained per PC (index 0 = PC1), or null if unavailable. */
   pve: number[] | null;
 };
 
-export async function fetchPCAPassportData(PCAFile: string, subset: string = ALL_ACCESSIONS_SUBSET): Promise<PCAPassportFetchResult> {
+export type FetchPCAPassportOptions = {
+  /** Skip every cache layer (PCA/PVE file fetch cache and per-page unstable_cache). For performance testing. */
+  noCache?: boolean;
+};
+
+export async function fetchPCAPassportData(
+  PCAFile: string,
+  subset: string = ALL_ACCESSIONS_SUBSET,
+  { noCache = false }: FetchPCAPassportOptions = {},
+): Promise<PCAPassportFetchResult> {
   try {
     const debug = chalk.blue;
+    const overallStart = performance.now();
 
     // Fetch PCA data
-    console.log(debug('Fetching PCA passport data for:'), PCAFile, subset);
+    console.log(debug('Fetching PCA passport data for:'), PCAFile, subset, noCache ? chalk.magenta('(cache disabled)') : '');
     
     const fileInfo = getDatasetInfo(PCAFile, subset);
     if (!fileInfo) {
       throw new Error('Invalid PCA file');
     }
 
+    const pcaStart = performance.now();
     const [PCAData, pve] = await Promise.all([
-      fetchAndParsePCAFile(fileInfo.fileUrl),
-      fileInfo.pveFileUrl ? fetchAndParsePveFile(fileInfo.pveFileUrl) : Promise.resolve(null),
+      fetchAndParsePCAFile(fileInfo.fileUrl, noCache),
+      fileInfo.pveFileUrl ? fetchAndParsePveFile(fileInfo.pveFileUrl, noCache) : Promise.resolve(null),
     ]);
+    console.log(debug(`PCA file loaded in ${((performance.now() - pcaStart) / 1000).toFixed(2)}s`));
 
     // Get genotype IDs
     const genotypeIds = PCAData.map((p: any) => p.IID);
     
     const maxPassportDataLength = 3000; // keep the size of each page less than 2MB to enable nextJS caching
-    const cacheTimeoutSeconds = 86400; // Cache timeout: 1 day (86400 seconds) - keep in sync with fetchAndParsePCAFile's revalidate above
+    const cacheTimeoutSeconds = 86400; // Cache timeout: 1 day (86400 seconds) - keep in sync with fileFetchOptions' revalidate above
     const totalSamples = genotypeIds.length;
     const totalPages = Math.ceil(totalSamples / maxPassportDataLength);
     const selectFields = passportDataSelectFields.join(',');
     
     console.log(debug(`Total samples requested: ${totalSamples}`));
-    console.log(debug(`Total pages to fetch: ${totalPages}`));
+    console.log(debug(`Total pages to fetch: ${totalPages} (in parallel)`));
     
-    // Fetch all pages sequentially
-    const allPassportData: any[] = [];
-    
-    for (let pageNumber = 0; pageNumber <= (totalPages - 1); pageNumber++) {
-      console.log(debug(`Fetching page ${pageNumber}/${totalPages}...`));
-      
-      const startTime = performance.now();
-      
-      // Wrap fetch in unstable_cache for proper POST request caching
-      const fetchPageData = unstable_cache(
-        async (pageNum: number, ids: string[]) => {
-          const queryParams = new URLSearchParams({
-            select: selectFields,
-            l: String(maxPassportDataLength),
-            p: String(pageNum),
-          });
-          const response = await fetch(
-            `https://genolink.plantinformatics.io/api/genesys/accession/query?${queryParams.toString()}`,
-            {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-              },
-              body: JSON.stringify({genotypeIds: ids}),
-            }
-          );
-          
-          if (!response.ok) {
-            const errorText = await response.text();
-            console.log(chalk.red(`Error fetching page ${pageNum}: HTTP ${response.status}`));
-            console.log(chalk.red(`Error response: ${errorText.substring(0, 200)}`));
-            throw new Error(`Failed to fetch page ${pageNum}: HTTP ${response.status} - ${response.statusText}`);
-          }
-          
-          return await response.json();
-        },
-        [`passport-data-${PCAFile}-${subset}-page-${pageNumber}`],
-        {
-          revalidate: cacheTimeoutSeconds,
-          tags: [`passport-data`, `passport-data-${PCAFile}`, `passport-data-${PCAFile}-${subset}`]
-        }
-      );
-      
-      const pageData = await fetchPageData(pageNumber, genotypeIds);
-      const endTime = performance.now();
-      const requestDuration = ((endTime - startTime) / 1000).toFixed(2); // Convert to seconds with 2 decimal places
-      
-      const rawPageContent = pageData.content || [];
-      const pageContent = rawPageContent.map((item: any) =>
-        replaceNullsWithMissing(item)
-      );
-      
-      // Calculate page size in bytes
-      const pageSizeBytes = new Blob([JSON.stringify(pageData)]).size;
-      const pageSizeKB = (pageSizeBytes / 1024).toFixed(2);
-      const pageSizeMB = (pageSizeBytes / (1024 * 1024)).toFixed(2);
-      
-      allPassportData.push(...pageContent);
-      
-      console.log(chalk.green(`✓ Page ${pageNumber}/${totalPages} received: ${pageContent.length} items (${pageSizeKB} KB / ${pageSizeMB} MB) in ${requestDuration}s`));
-      console.log(debug(`Total items collected so far: ${allPassportData.length}`));
-    }
+    // Fetch all pages concurrently. Each page is wrapped in unstable_cache for
+    // POST request caching, unless caching is disabled for performance testing.
+    const passportStart = performance.now();
+    const pages = await Promise.all(
+      Array.from({ length: totalPages }, async (_, pageNumber) => {
+        const startTime = performance.now();
+
+        const pageData = noCache
+          ? await fetchPassportPage(pageNumber, genotypeIds, selectFields, maxPassportDataLength)
+          : await unstable_cache(
+              fetchPassportPage,
+              [`passport-data-${PCAFile}-${subset}-page-${pageNumber}`],
+              {
+                revalidate: cacheTimeoutSeconds,
+                tags: [`passport-data`, `passport-data-${PCAFile}`, `passport-data-${PCAFile}-${subset}`]
+              }
+            )(pageNumber, genotypeIds, selectFields, maxPassportDataLength);
+
+        const requestDuration = ((performance.now() - startTime) / 1000).toFixed(2);
+        const pageContent = (pageData.content || []).map((item) => replaceNullsWithMissing(item));
+
+        // Calculate page size in bytes
+        const pageSizeBytes = new Blob([JSON.stringify(pageData)]).size;
+        const pageSizeKB = (pageSizeBytes / 1024).toFixed(2);
+        const pageSizeMB = (pageSizeBytes / (1024 * 1024)).toFixed(2);
+
+        console.log(chalk.green(`✓ Page ${pageNumber + 1}/${totalPages} received: ${pageContent.length} items (${pageSizeKB} KB / ${pageSizeMB} MB) in ${requestDuration}s`));
+        return pageContent;
+      })
+    );
+    const allPassportData: any[] = pages.flat();
+    console.log(debug(`Passport data fetched in ${((performance.now() - passportStart) / 1000).toFixed(2)}s`));
     
     console.log(debug(`All pages fetched successfully. Total items: ${allPassportData.length}`));
     
@@ -179,7 +193,7 @@ export async function fetchPCAPassportData(PCAFile: string, subset: string = ALL
     } else if (droppedInMerge > 0) {
       console.log(chalk.yellow(`⚠ ${droppedInMerge} of ${allPassportData.length} passport records had no matching PCA record and were dropped from the merge`));
     }
-    console.log(debug(`Returning ${mergedData.length} merged items to caller`));
+    console.log(debug(`Returning ${mergedData.length} merged items to caller (total ${((performance.now() - overallStart) / 1000).toFixed(2)}s)`));
 
     if (pve) {
       console.log(debug(`PVE loaded: ${pve.length} components`));
