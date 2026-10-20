@@ -14,7 +14,7 @@ import BottomFooter from '@/components/bottom-footer';
 
 export default function Page() {
   // `rawData` and `isLoading` come from the shared context — no local fetch needed.
-  const { rawData, isLoading, pve } = usePcaData();
+  const { rawData, isLoading, loadProgress, pve } = usePcaData();
 
   const [groupBy, setGroupBy] = useQueryState("groupBy", parseAsString.withDefault("subRegion"));
   const { palette, resizablePlot } = usePreferences();
@@ -34,6 +34,7 @@ export default function Page() {
         <PcaPlot
         rawData={rawData}
         isLoading={isLoading}
+        loadProgress={loadProgress}
         groupBy={groupBy}
         chartSelection={chartSelection}
         setChartSelection={setChartSelection}

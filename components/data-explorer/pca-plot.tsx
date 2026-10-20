@@ -8,6 +8,7 @@ import { chartConfig, buildChartLayout } from "@/config/chart-config";
 import type { PCAPassportData } from "@/config/table-and-filter-config";
 import { LoadingOverlay } from "@/components/data-explorer/pca-plot-loading-overlay";
 import { usePreferences } from "@/context/preferences-context";
+import type { LoadProgress } from "@/lib/load-progress";
 
 const Plot = dynamic(() => import("react-plotly.js"), {
   ssr: false,
@@ -18,6 +19,7 @@ const Plot = dynamic(() => import("react-plotly.js"), {
 export function PcaPlot({
   rawData, 
   isLoading,
+  loadProgress = null,
   groupBy, 
   chartSelection, 
   setChartSelection, 
@@ -29,6 +31,7 @@ export function PcaPlot({
 }:{ 
   rawData: PCAPassportData[];
   isLoading: boolean;
+  loadProgress?: LoadProgress | null;
   groupBy: string;
   chartSelection: { IID: string[] };
   setChartSelection: React.Dispatch<React.SetStateAction<{ IID: string[] }>>;
@@ -117,7 +120,7 @@ export function PcaPlot({
 
   return (
       <div ref={containerRef} className="relative w-full h-full min-w-0 overflow-hidden box-border">
-        {isPlotLoading && <LoadingOverlay message="Loading plot..." />}
+        {isPlotLoading && <LoadingOverlay message="Loading plot..." progress={isLoading ? loadProgress : null} />}
         <Plot
           data={data}
           layout={dynamicLayout}
