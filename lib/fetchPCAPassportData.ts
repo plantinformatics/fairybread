@@ -60,8 +60,10 @@ async function fetchAndParsePveFile(pveFileUrl: string, noCache: boolean): Promi
   }
 }
 
+type GenolinkPage = { content?: Record<string, unknown>[]; last?: boolean; totalPages?: number };
+
 /** Fetches one page of passport data from Genolink for the given genotype IDs. */
-async function fetchPassportPage(pageNum: number, ids: string[], selectFields: string, pageSize: number): Promise<{ content?: Record<string, unknown>[] }> {
+async function fetchPassportPage(pageNum: number, ids: string[], selectFields: string, pageSize: number): Promise<GenolinkPage> {
   const queryParams = new URLSearchParams({
     select: selectFields,
     l: String(pageSize),
@@ -86,6 +88,26 @@ async function fetchPassportPage(pageNum: number, ids: string[], selectFields: s
   return await response.json();
 }
 
+/**
+ * Fetches all passport rows for one chunk of genotype IDs. Genolink re-resolves
+ * every ID in the body on each request, so sending only this chunk's IDs (rather
+ * than the full list plus a page number) roughly halves request time.
+ * Normally one page covers the chunk; if Genolink returns more rows than fit in
+ * a page (e.g. an ID maps to several accessions), the remaining pages are fetched too.
+ */
+export async function fetchPassportChunk(ids: string[], selectFields: string, pageSize: number): Promise<Record<string, unknown>[]> {
+  const firstPage = await fetchPassportPage(0, ids, selectFields, pageSize);
+  if (firstPage.last !== false || !firstPage.totalPages || firstPage.totalPages <= 1) {
+    return firstPage.content || [];
+  }
+
+  console.log(chalk.yellow(`⚠ Chunk of ${ids.length} IDs spans ${firstPage.totalPages} pages, fetching the rest`));
+  const remainingPages = await Promise.all(
+    Array.from({ length: firstPage.totalPages - 1 }, (_, i) => fetchPassportPage(i + 1, ids, selectFields, pageSize))
+  );
+  return [firstPage, ...remainingPages].flatMap((page) => page.content || []);
+}
+
 export type PCAPassportFetchResult = {
   data: any[];
   /** Proportion of variance explained per PC (index 0 = PC1), or null if unavailable. */
@@ -93,7 +115,7 @@ export type PCAPassportFetchResult = {
 };
 
 export type FetchPCAPassportOptions = {
-  /** Skip every cache layer (PCA/PVE file fetch cache and per-page unstable_cache). For performance testing. */
+  /** Skip every cache layer (PCA/PVE file fetch cache and per-chunk unstable_cache). For performance testing. */
   noCache?: boolean;
 };
 
@@ -124,49 +146,53 @@ export async function fetchPCAPassportData(
     // Get genotype IDs
     const genotypeIds = PCAData.map((p: any) => p.IID);
     
-    const maxPassportDataLength = 3000; // keep the size of each page less than 2MB to enable nextJS caching
+    const genotypeIdsPerRequest = 3000; // keep each response less than 2MB to enable nextJS caching
     const cacheTimeoutSeconds = 86400; // Cache timeout: 1 day (86400 seconds) - keep in sync with fileFetchOptions' revalidate above
     const totalSamples = genotypeIds.length;
-    const totalPages = Math.ceil(totalSamples / maxPassportDataLength);
     const selectFields = passportDataSelectFields.join(',');
-    
+    const idChunks: string[][] = [];
+    for (let start = 0; start < totalSamples; start += genotypeIdsPerRequest) {
+      idChunks.push(genotypeIds.slice(start, start + genotypeIdsPerRequest));
+    }
+
     console.log(debug(`Total samples requested: ${totalSamples}`));
-    console.log(debug(`Total pages to fetch: ${totalPages} (in parallel)`));
-    
-    // Fetch all pages concurrently. Each page is wrapped in unstable_cache for
+    console.log(debug(`Total chunks to fetch: ${idChunks.length} of up to ${genotypeIdsPerRequest} IDs (in parallel)`));
+
+    // Fetch all chunks concurrently. Each chunk is wrapped in unstable_cache for
     // POST request caching, unless caching is disabled for performance testing.
+    // unstable_cache also keys on the arguments, so a changed ID list misses the cache.
     const passportStart = performance.now();
-    const pages = await Promise.all(
-      Array.from({ length: totalPages }, async (_, pageNumber) => {
+    const chunks = await Promise.all(
+      idChunks.map(async (ids, chunkIndex) => {
         const startTime = performance.now();
 
-        const pageData = noCache
-          ? await fetchPassportPage(pageNumber, genotypeIds, selectFields, maxPassportDataLength)
+        const chunkRows = noCache
+          ? await fetchPassportChunk(ids, selectFields, genotypeIdsPerRequest)
           : await unstable_cache(
-              fetchPassportPage,
-              [`passport-data-${PCAFile}-${subset}-page-${pageNumber}`],
+              fetchPassportChunk,
+              [`passport-data-${PCAFile}-${subset}-chunk-${chunkIndex}`],
               {
                 revalidate: cacheTimeoutSeconds,
                 tags: [`passport-data`, `passport-data-${PCAFile}`, `passport-data-${PCAFile}-${subset}`]
               }
-            )(pageNumber, genotypeIds, selectFields, maxPassportDataLength);
+            )(ids, selectFields, genotypeIdsPerRequest);
 
         const requestDuration = ((performance.now() - startTime) / 1000).toFixed(2);
-        const pageContent = (pageData.content || []).map((item) => replaceNullsWithMissing(item));
+        const chunkContent = chunkRows.map((item) => replaceNullsWithMissing(item));
 
-        // Calculate page size in bytes
-        const pageSizeBytes = new Blob([JSON.stringify(pageData)]).size;
-        const pageSizeKB = (pageSizeBytes / 1024).toFixed(2);
-        const pageSizeMB = (pageSizeBytes / (1024 * 1024)).toFixed(2);
+        // Calculate chunk size in bytes
+        const chunkSizeBytes = new Blob([JSON.stringify(chunkRows)]).size;
+        const chunkSizeKB = (chunkSizeBytes / 1024).toFixed(2);
+        const chunkSizeMB = (chunkSizeBytes / (1024 * 1024)).toFixed(2);
 
-        console.log(chalk.green(`✓ Page ${pageNumber + 1}/${totalPages} received: ${pageContent.length} items (${pageSizeKB} KB / ${pageSizeMB} MB) in ${requestDuration}s`));
-        return pageContent;
+        console.log(chalk.green(`✓ Chunk ${chunkIndex + 1}/${idChunks.length} received: ${chunkContent.length} items for ${ids.length} IDs (${chunkSizeKB} KB / ${chunkSizeMB} MB) in ${requestDuration}s`));
+        return chunkContent;
       })
     );
-    const allPassportData: any[] = pages.flat();
+    const allPassportData: any[] = chunks.flat();
     console.log(debug(`Passport data fetched in ${((performance.now() - passportStart) / 1000).toFixed(2)}s`));
     
-    console.log(debug(`All pages fetched successfully. Total items: ${allPassportData.length}`));
+    console.log(debug(`All chunks fetched successfully. Total items: ${allPassportData.length}`));
     
     const passportDataGenotypeIds = new Set(allPassportData.map((item: any) => item.genotypeID));
     const missingPassportDataIds = genotypeIds.filter((id: string) => !passportDataGenotypeIds.has(id));
