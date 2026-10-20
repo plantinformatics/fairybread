@@ -84,6 +84,9 @@ export function PcaDataProvider({ children }: { children: React.ReactNode }) {
   );
   // Keep the selected subset in the URL (?subset=All%20Accessions) alongside `file`.
   const [subset, setQuerySubset] = useQueryState('subset', parseAsString.withDefault(ALL_ACCESSIONS_SUBSET));
+  // Dev/perf testing: ?nocache=1 on the page is forwarded to the API so every
+  // server cache layer is bypassed and load times can be measured cold.
+  const [noCache] = useQueryState('nocache', parseAsString);
 
   // Wrap the nuqs setters so callers only need to pass a string — the underlying
   // nuqs setter also accepts null (to clear), but we hide that complexity here.
@@ -114,10 +117,12 @@ export function PcaDataProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(true);
 
       try {
-        const res = await fetch(
-          `/api/pca-passport-data?file=${encodeURIComponent(file)}&subset=${encodeURIComponent(subset)}`,
-          { signal: controller.signal },
-        );
+        const params = new URLSearchParams({ file, subset });
+        if (noCache) params.set('nocache', noCache);
+        const res = await fetch(`/api/pca-passport-data?${params.toString()}`, {
+          signal: controller.signal,
+          cache: noCache ? 'no-store' : 'default',
+        });
         if (!res.ok) {
           const body = await res.text();
           throw new Error(`Failed to fetch PCA passport data (${res.status}): ${body}`);
@@ -146,7 +151,7 @@ export function PcaDataProvider({ children }: { children: React.ReactNode }) {
     return () => {
       controller.abort();
     };
-  }, [file, subset]);
+  }, [file, subset, noCache]);
 
   return (
     <PcaDataContext.Provider value={{ file, setFile, subset, setSubset, rawData, pve, isLoading }}>
