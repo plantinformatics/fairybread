@@ -10,14 +10,9 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { columns } from '@/config/table-and-filter-config';
+import { GROUP_BY_OPTIONS, TEXT_FILTER_GROUP_BY } from '@/lib/view-url';
 import { ChevronsUpDown, Group } from 'lucide-react';
 import posthog from 'posthog-js';
-
-const groupingColumns = columns.filter(
-  (col): col is (typeof columns)[number] & { accessorKey: string } =>
-    col.enableGrouping === true && typeof col.accessorKey === 'string'
-);
 
 export function PcaGroupByDropdown({
   groupBy,
@@ -31,17 +26,9 @@ export function PcaGroupByDropdown({
     void setGroupBy(value);
   };
 
-  const options = [
-    ...groupingColumns.map((col) => ({
-      value: col.accessorKey,
-      label: String(col.id),
-    })),
-    { value: 'textFilter', label: 'Text filter' },
-  ];
-
   const groupByLabel =
-    options.find((option) => option.value === groupBy)?.label ??
-    (groupBy === 'textFilter' ? 'Text filter' : 'Group by');
+    GROUP_BY_OPTIONS.find((option) => option.value === groupBy)?.label ??
+    (groupBy === TEXT_FILTER_GROUP_BY ? 'Text filter' : 'Group by');
 
   return (
     <DropdownMenu>
@@ -58,7 +45,7 @@ export function PcaGroupByDropdown({
         <DropdownMenuGroup>
           <DropdownMenuLabel className="font-medium">Group graph by</DropdownMenuLabel>
           <DropdownMenuRadioGroup value={groupBy} onValueChange={onGroupByChange}>
-            {options.map((option) => (
+            {GROUP_BY_OPTIONS.map((option) => (
               <DropdownMenuRadioItem key={option.value} value={option.value}>
                 {option.label}
               </DropdownMenuRadioItem>

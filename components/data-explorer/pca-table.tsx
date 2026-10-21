@@ -21,6 +21,7 @@ import { PcaTableToolbar } from '@/components/data-explorer/pca-table-toolbar';
 import { useCustomList } from '@/context/custom-list-context';
 import { usePreferences } from '@/context/preferences-context';
 import { buildGroupedEntries, buildRowColorMap } from '@/lib/dataProcessing';
+import { CUSTOM_LIST_FILTER_KEY, TEXT_FILTER_GROUP_BY } from '@/lib/view-url';
 import type { FilterFieldConfig } from '@/components/reui/filters';
 import { ListChecks } from 'lucide-react';
 
@@ -51,7 +52,7 @@ export function PcaTable({
   const [columnOrder, setColumnOrder] = useState<string[]>(columns.map((column) => column.id as string));
   const [sorting, setSorting] = useState<SortingState>([{ id: 'Genotype ID', desc: false }]);
   const [tableData, setTableData] = useState<PCAPassportData[]>([])
-  const previousGroupByRef = useRef<string>(groupBy === "textFilter" ? "textFilter" : groupBy);
+  const previousGroupByRef = useRef<string>(groupBy === TEXT_FILTER_GROUP_BY ? TEXT_FILTER_GROUP_BY : groupBy);
   const isAutoTextFilterGroupByRef = useRef<boolean>(false);
   const { customList } = useCustomList();
   const { palette } = usePreferences();
@@ -61,7 +62,7 @@ export function PcaTable({
   // (greyed out in the add-filter menu) whenever the list is empty.
   const fieldsWithCustomList = useMemo<FilterFieldConfig[]>(() => {
     const customListField: FilterFieldConfig = {
-      key: "customList",
+      key: CUSTOM_LIST_FILTER_KEY,
       label: "Custom List",
       icon: <ListChecks className="size-3.5" />,
       type: "multiselect",
@@ -97,7 +98,7 @@ export function PcaTable({
     for (const filter of appliedFilters) {
       const hasValue = (filter.values ?? []).some((value) => String(value).trim() !== "");
       if (!hasValue) continue;
-      fields.push(filter.field === "customList" ? "genotypeID" : filter.field);
+      fields.push(filter.field === CUSTOM_LIST_FILTER_KEY ? "genotypeID" : filter.field);
     }
     return fields;
   }, [appliedFilters]);
@@ -108,7 +109,7 @@ export function PcaTable({
   const columnColorMaps = useMemo(() => {
     const maps = new Map<string, Map<string, string>>();
     const fieldsToColor = new Set<string>(activeFilterFields);
-    if (groupBy && groupBy !== "textFilter") {
+    if (groupBy && groupBy !== TEXT_FILTER_GROUP_BY) {
       fieldsToColor.add(groupBy);
     }
     for (const field of fieldsToColor) {
@@ -145,17 +146,17 @@ export function PcaTable({
 
   useEffect(() => {
     if (hasTextFilterInput) {
-      if (groupBy !== "textFilter") {
+      if (groupBy !== TEXT_FILTER_GROUP_BY) {
         previousGroupByRef.current = groupBy;
         isAutoTextFilterGroupByRef.current = true;
-        setGroupBy("textFilter");
+        setGroupBy(TEXT_FILTER_GROUP_BY);
       }
       return;
     }
 
-    if (isAutoTextFilterGroupByRef.current && groupBy === "textFilter") {
+    if (isAutoTextFilterGroupByRef.current && groupBy === TEXT_FILTER_GROUP_BY) {
       isAutoTextFilterGroupByRef.current = false;
-      if (previousGroupByRef.current !== "textFilter") {
+      if (previousGroupByRef.current !== TEXT_FILTER_GROUP_BY) {
         setGroupBy(previousGroupByRef.current);
       }
       return;
