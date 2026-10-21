@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { parseAsArrayOf, parseAsString, useQueryStates } from "nuqs"
+import { useQueryStates } from "nuqs"
 
 import type { Filter, FilterFieldConfig } from "@/components/reui/filters"
 import { applyFilters } from "@/lib/filter-engine"
+import { filterParsers } from "@/lib/view-url"
 
 interface UseTableFiltersOptions<TRow extends Record<string, unknown>> {
   tableData: TRow[]
@@ -69,23 +70,25 @@ export function useTableFilters<TRow extends Record<string, unknown>>({
   debounceMs = 250,
   onFiltersChange,
 }: UseTableFiltersOptions<TRow>) {
-  const queryStateParsers = useMemo(() => {
-    return Object.fromEntries(
-      fields
-        .map((field) => field.key)
-        .filter((key): key is string => Boolean(key))
-        .map((key) => [key, parseAsArrayOf(parseAsString)])
-    )
-  }, [fields])
+  // One URL param per field, using the shared parsers from `lib/view-url.ts`.
+  // Fields without a parser there aren't persisted to the URL.
+  const queryStateParsers = useMemo(
+    () =>
+      Object.fromEntries(
+        fields
+          .map((field) => field.key)
+          .filter((key): key is string => Boolean(key && filterParsers[key]))
+          .map((key) => [key, filterParsers[key]])
+      ),
+    [fields]
+  )
 
   const queryStateKeys = useMemo(
     () => Object.keys(queryStateParsers),
     [queryStateParsers]
   )
 
-  const [queryStates, setQueryStates] = useQueryStates(queryStateParsers, {
-    history: "push",
-  })
+  const [queryStates, setQueryStates] = useQueryStates(queryStateParsers)
 
   const fieldsMap = useMemo(() => {
     const map: Record<string, FilterFieldConfig> = {}

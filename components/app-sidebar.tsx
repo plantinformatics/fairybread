@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { createSerializer, parseAsString, useQueryState } from "nuqs"
+import { useQueryState } from "nuqs"
 import {
   Calendar,
   CheckSquare,
@@ -27,10 +27,7 @@ import {
 } from "@/components/ui/sidebar"
 import type { LucideIcon } from "lucide-react"
 import { usePcaData } from "@/context/pca-data-context"
-
-// Serializer for all shared URL params. Add new ones here and they'll
-// automatically be preserved on any navigation item that has preserveParams: true.
-const serialize = createSerializer({ file: parseAsString, subset: parseAsString, groupBy: parseAsString })
+import { serializeView, viewParsers } from "@/lib/view-url"
 
 type SidebarNavItem = {
   title: string
@@ -105,7 +102,7 @@ const items: SidebarNavItem[] = [
 
 export function AppSidebar() {
   const { file, subset } = usePcaData()
-  const [groupBy] = useQueryState("groupBy", parseAsString.withDefault("subRegion"))
+  const [groupBy] = useQueryState("groupBy", viewParsers.groupBy)
 
   return (
     <Sidebar variant="sidebar" collapsible='icon'>
@@ -117,7 +114,7 @@ export function AppSidebar() {
                 // Default is to preserve shared params; set preserveParams: false
                 // on items (like Settings) that don't need them.
                 const href = item.preserveParams !== false
-                  ? serialize(item.url, { file, subset, groupBy })
+                  ? serializeView(item.url, { file, subset, groupBy })
                   : item.url
 
                 return (
