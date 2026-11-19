@@ -85,6 +85,7 @@ export function createPlotData(
         customdata: value.map((p: any) => [
           p.accessionName,
           p[groupingValue] ?? "N/A",
+          p.otherGenotypeIDs ? `<b>Also genotyped as:</b> ${p.otherGenotypeIDs.join(", ")}<br>` : "",
         ]),
         name: (key.length < 20 ? key : key.substring(0, 17) + "...") + " (" + value.length + ")",
         opacity: key === "Match" ? 0.8 : 0.5,
@@ -94,6 +95,7 @@ export function createPlotData(
         hovertemplate:
         "<u><b>%{text}</b></u><br>" +
         "<b>Accession Name:</b> %{customdata[0]}<br>" +
+        "%{customdata[2]}" +
         `<b>${pcx}:</b> %{x:.2f}<br>` +
         `<b>${pcy}:</b> %{y:.2f}<br>` +
         (pcz ? `<b>${pcz}:</b> %{z:.2f}<br>` : "") +

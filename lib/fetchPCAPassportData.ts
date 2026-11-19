@@ -5,7 +5,7 @@ import chalk from 'chalk';
 import { parse } from "csv-parse/sync";
 
 import { joinListFields, replaceNullsWithMissing } from '@/lib/dataProcessing'
-import { GENOLINK_QUERY_URL, partitionGenolinkIds } from '@/lib/genolink-ids'
+import { GENOLINK_QUERY_URL, mergePassportByAccession, partitionGenolinkIds } from '@/lib/genolink-ids'
 import type { LoadProgress } from '@/lib/load-progress'
 
 /** Fetch options for the upstream file fetches. `noCache` bypasses the Next fetch cache entirely. */
@@ -183,31 +183,22 @@ export async function fetchPCAPassportData(
     
     console.log(debug(`All pages fetched successfully. Total items: ${allPassportData.length}`));
     
-    const passportDataGenotypeIds = new Set(allPassportData.map((item: any) => item.genotypeID));
-    const missingPassportDataIds = genotypeIds.filter((id: string) => !passportDataGenotypeIds.has(id));
-    if (missingPassportDataIds.length > 0) {
-      console.log(chalk.yellow(`⚠ Samples without passport data: ${missingPassportDataIds.length} out of ${totalSamples}`));
-    } else {
-      console.log(chalk.green(`✓ All ${totalSamples} samples have passport data`));
-    }
-
+    // Joined by accession, not genotype ID: Genolink returns one passport row per accession,
+    // but an accession genotyped more than once has several PCA rows.
     onProgress({ stage: 'merging', totalSamples });
-    const pcaByIID = new Map(PCAData.map((p: any) => [p.IID, p]));
-    const mergedData = allPassportData.flatMap((passport: any) => {
-      const pca = pcaByIID.get(passport.genotypeID);
-      return pca ? [{ ...passport, pca }] : [];
-    });
+    const mergedData = mergePassportByAccession(allPassportData, PCAData);
 
     // The "successfully fetched" log above only reflects the raw passport API
-    // response - it says nothing about whether the join below (which produces
-    // what's actually returned to the frontend) succeeded. Surface that here
-    // so a broken join (e.g. an ID mismatch) can never look identical to a
-    // real success.
-    const droppedInMerge = allPassportData.length - mergedData.length;
+    // response - it says nothing about whether the join (which produces what's
+    // actually returned to the frontend) succeeded. Surface that here so a broken
+    // join (e.g. an ID mismatch) can never look identical to a real success.
+    const missingPassportCount = totalSamples - mergedData.length;
     if (mergedData.length === 0 && allPassportData.length > 0) {
-      console.log(chalk.red(`✗ Merge produced 0 items from ${allPassportData.length} fetched passport records - no passport genotypeID matched a PCA IID. Returning empty data to caller.`));
-    } else if (droppedInMerge > 0) {
-      console.log(chalk.yellow(`⚠ ${droppedInMerge} of ${allPassportData.length} passport records had no matching PCA record and were dropped from the merge`));
+      console.log(chalk.red(`✗ Merge produced 0 items from ${allPassportData.length} fetched passport records - no passport accession matched a PCA IID. Returning empty data to caller.`));
+    } else if (missingPassportCount > 0) {
+      console.log(chalk.yellow(`⚠ Samples without passport data: ${missingPassportCount} out of ${totalSamples}`));
+    } else {
+      console.log(chalk.green(`✓ All ${totalSamples} samples have passport data`));
     }
     console.log(debug(`Returning ${mergedData.length} merged items to caller (total ${((performance.now() - overallStart) / 1000).toFixed(2)}s)`));
 

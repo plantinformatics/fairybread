@@ -18,6 +18,7 @@
 import type { CellContext, ColumnDef, HeaderContext, RowData } from "@tanstack/react-table"
 import { DataGridColumnHeader } from "@/components/reui/data-grid/data-grid-column-header"
 import type { FilterFieldConfig } from "@/components/reui/filters"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 
 declare module "@tanstack/react-table" {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -75,6 +76,8 @@ export type PCAPassportData = {
     "sampStat": string
     /** Genolink subset titles the accession belongs to, joined with "; " (see `joinListFields`). */
     "subsets.title": string
+    /** The accession's other genotype IDs in this dataset, when it was genotyped more than once (see `mergePassportByAccession`). */
+    "otherGenotypeIDs"?: string[]
 }
 
 /** Same-sized colour swatch used in active column cells and headers. */
@@ -144,6 +147,29 @@ const renderActiveColumnCell = (accessorKey: string) =>
         )
     }
 
+/**
+ * Genotype ID shown in purple when its accession was genotyped more than once. The tooltip lists
+ * the accession's other genotype IDs, which share this row's passport data but have their own PCA point.
+ */
+function MultiRunGenotypeId({ genotypeID, otherGenotypeIDs }: { genotypeID: string; otherGenotypeIDs: string[] }) {
+    return (
+        <Tooltip>
+            <TooltipTrigger
+                delay={150}
+                render={
+                    <span className="min-w-0 cursor-help break-words text-purple-600 underline decoration-dotted underline-offset-4 dark:text-purple-400">
+                        {genotypeID}
+                    </span>
+                }
+            />
+            <TooltipContent>
+                <p className="font-semibold">Accession genotyped {otherGenotypeIDs.length + 1} times. Other genotype IDs:</p>
+                {otherGenotypeIDs.map((id) => <p key={id}>{id}</p>)}
+            </TooltipContent>
+        </Tooltip>
+    )
+}
+
 type ColumnMeta = {
     filter?: Omit<FilterFieldConfig, "key" | "label"> & {
         label?: string
@@ -161,7 +187,18 @@ export const columns: FilterableColumnDef[] = [
         id: "Genotype ID",
         accessorKey: "genotypeID",
         header: renderActiveColumnHeader("genotypeID", "Genotype ID"),
-        cell: renderActiveColumnCell("genotypeID"),
+        cell: ({ row, table }) => {
+            const color = getColumnDotColor(table, "genotypeID", row.original.genotypeID)
+            const { otherGenotypeIDs } = row.original
+            return (
+                <span className="flex min-w-0 items-center gap-2">
+                    {color && <GroupColorDot color={color} />}
+                    {otherGenotypeIDs
+                        ? <MultiRunGenotypeId genotypeID={row.original.genotypeID} otherGenotypeIDs={otherGenotypeIDs} />
+                        : <span className="min-w-0 break-words">{row.original.genotypeID}</span>}
+                </span>
+            )
+        },
         meta: {
             filter: {
                 type: "text",

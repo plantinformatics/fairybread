@@ -8,7 +8,7 @@
 // genotypeID, inAllAccessions (whether the ID is also in the crop's full dataset), reason.
 import { mkdir } from 'node:fs/promises';
 import { ALL_ACCESSIONS_SUBSET, PCAFileInfo, getDatasetInfo, getSubsetNames } from '@/config/pca-location-config';
-import { GENOLINK_QUERY_URL, partitionGenolinkIds } from '@/lib/genolink-ids';
+import { GENOLINK_QUERY_URL, accessionOfGenotypeId, partitionGenolinkIds } from '@/lib/genolink-ids';
 
 const PAGE_SIZE = 3000;
 const OUT_DIR = 'logs';
@@ -22,7 +22,8 @@ async function fetchGenotypeIds(fileUrl: string): Promise<string[]> {
   return lines.map((line) => line.split('\t')[iidColumn].trim());
 }
 
-async function fetchIdsWithPassport(ids: string[]): Promise<Set<string>> {
+/** Accessions Genolink has passport data for. Genolink returns one row per accession, however many of its genotype IDs are sent. */
+async function fetchAccessionsWithPassport(ids: string[]): Promise<Set<string>> {
   const pages = await Promise.all(Array.from({ length: Math.ceil(ids.length / PAGE_SIZE) }, async (_, page) => {
     const params = new URLSearchParams({ select: 'accessionNumber', l: String(PAGE_SIZE), p: String(page) });
     const response = await fetch(`${GENOLINK_QUERY_URL}?${params}`, {
@@ -32,9 +33,9 @@ async function fetchIdsWithPassport(ids: string[]): Promise<Set<string>> {
     });
     if (!response.ok) throw new Error(`Genolink page ${page} failed (${response.status}): ${(await response.text()).slice(0, 200)}`);
     const { content = [] } = (await response.json()) as { content?: { genotypeID: string }[] };
-    return content.map((row) => row.genotypeID);
+    return content.map((row) => accessionOfGenotypeId(row.genotypeID));
   }));
-  return new Set(pages.flat());
+  return new Set(pages.flat().filter((accession) => accession !== undefined));
 }
 
 const slug = (text: string) => text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -45,9 +46,9 @@ async function report(crop: string, subset: string) {
   const ids = subset === ALL_ACCESSIONS_SUBSET ? [...allAccessionIds] : await fetchGenotypeIds(fileInfo.fileUrl);
 
   const { queryable, unqueryable } = partitionGenolinkIds(ids);
-  const withPassport = await fetchIdsWithPassport(queryable);
+  const accessionsWithPassport = await fetchAccessionsWithPassport(queryable);
   const missing = [
-    ...queryable.filter((id) => !withPassport.has(id)).map((id) => [id, 'no passport record in Genolink']),
+    ...queryable.filter((id) => !accessionsWithPassport.has(accessionOfGenotypeId(id)!)).map((id) => [id, 'no passport record in Genolink']),
     ...unqueryable.map((id) => [id, 'not AGG format (skipped)']),
   ];
 
