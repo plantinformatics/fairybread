@@ -4,7 +4,7 @@ import { passportDataSelectFields } from '@/config/table-and-filter-config';
 import chalk from 'chalk';
 import { parse } from "csv-parse/sync";
 
-import { replaceNullsWithMissing } from '@/lib/dataProcessing'
+import { joinListFields, replaceNullsWithMissing } from '@/lib/dataProcessing'
 import { GENOLINK_QUERY_URL, partitionGenolinkIds } from '@/lib/genolink-ids'
 import type { LoadProgress } from '@/lib/load-progress'
 
@@ -163,7 +163,7 @@ export async function fetchPCAPassportData(
             )(pageNumber, genotypeIds, selectFields, maxPassportDataLength);
 
         const requestDuration = ((performance.now() - startTime) / 1000).toFixed(2);
-        const pageContent = (pageData.content || []).map((item) => replaceNullsWithMissing(item));
+        const pageContent = (pageData.content || []).map((item) => replaceNullsWithMissing(joinListFields(item)));
 
         // Calculate page size in bytes
         const pageSizeBytes = new Blob([JSON.stringify(pageData)]).size;

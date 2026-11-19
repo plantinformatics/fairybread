@@ -3,6 +3,7 @@ import {
   buildGroupedEntries,
   buildRowColorMap,
   createPlotData,
+  joinListFields,
   replaceNullsWithMissing,
 } from "@/lib/dataProcessing"
 
@@ -19,6 +20,14 @@ describe("replaceNullsWithMissing", () => {
       a: "N/A",
       b: { c: ["N/A", 0, ""] },
     })
+  })
+})
+
+describe("joinListFields", () => {
+  test("joins arrays into a sorted string, empty arrays become null, other values untouched", () => {
+    expect(
+      joinListFields({ "subsets.title": ["CAIGE Disease Core Set Barley", "CAIGE Barley"], empty: [], none: null, name: "x" }),
+    ).toEqual({ "subsets.title": "CAIGE Barley; CAIGE Disease Core Set Barley", empty: null, none: null, name: "x" })
   })
 })
 
