@@ -40,6 +40,7 @@ import {
     Globe,
     Hash,
     Landmark,
+    Layers,
     Map as MapIcon,
     MapPinned,
     Sprout,
@@ -72,6 +73,8 @@ export type PCAPassportData = {
     "subRegion": string
     "taxonomy.taxonName": string
     "sampStat": string
+    /** Genolink subset titles the accession belongs to, joined with "; " (see `joinListFields`). */
+    "subsets.title": string
 }
 
 /** Same-sized colour swatch used in active column cells and headers. */
@@ -318,7 +321,22 @@ export const columns: FilterableColumnDef[] = [
                 icon: <Sprout className="size-3.5" />,
             },
         },
-    }
+    },
+    {
+        id: "Subsets",
+        header: renderActiveColumnHeader("subsets.title", "Subsets"),
+        accessorFn: (row) => row["subsets.title"],
+        accessorKey: "subsets.title",
+        enableGrouping: true,
+        cell: renderActiveColumnCell("subsets.title"),
+        meta: {
+            filter: {
+                type: "text",
+                label: "Subsets",
+                icon: <Layers className="size-3.5" />,
+            },
+        },
+    },
 ]
 
 export const passportDataSelectFields = columns

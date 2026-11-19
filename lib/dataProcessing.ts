@@ -103,6 +103,20 @@ export function createPlotData(
     })
 }
 
+/**
+ * Joins top-level array values (e.g. Genolink's `subsets.title`, since an accession can belong
+ * to several subsets) into one sorted "; "-separated string, so grouping, filtering and CSV
+ * export can treat them like any other text field. Empty arrays become null.
+ */
+export function joinListFields(row: Record<string, unknown>): Record<string, unknown> {
+  return Object.fromEntries(
+    Object.entries(row).map(([key, val]) => [
+      key,
+      Array.isArray(val) ? (val.length ? [...val].sort().join('; ') : null) : val,
+    ])
+  );
+}
+
 export function replaceNullsWithMissing(value: any): any {
   if (value === null) return 'N/A';
 
