@@ -29,14 +29,15 @@ Use the online version with pre-loaded datasets at [fairybread.plantinformatics.
 
 Fairybread currently supports the crops below. PCA coordinates for each crop are derived from the corresponding public dataset (Harvard Dataverse DOI); passport metadata comes from Genesys via Genolink as described above.
 
-| Crop | Public dataset (DOI) |
-|------|------------------------|
-| Wheat | [10.7910/DVN/CRSI0B](https://doi.org/10.7910/DVN/CRSI0B) |
-| Barley | [10.7910/DVN/H6SNVM](https://doi.org/10.7910/DVN/H6SNVM) |
-| Chickpea | [10.7910/DVN/ECQ4NC](https://doi.org/10.7910/DVN/ECQ4NC) |
-| Field Pea | [10.7910/DVN/A6WGYS](https://doi.org/10.7910/DVN/A6WGYS) |
-| Lentil | [10.7910/DVN/T0TDAS](https://doi.org/10.7910/DVN/T0TDAS) |
-| Lupin | [10.7910/DVN/FVTFIL](https://doi.org/10.7910/DVN/FVTFIL) |
+| Crop | Dataset | Public dataset (DOI) |
+|------|---------|------------------------|
+| Wheat | All Accessions | [10.7910/DVN/MOBTA8](https://doi.org/10.7910/DVN/MOBTA8) |
+| Barley | All Accessions | [10.7910/DVN/LXU0WD](https://doi.org/10.7910/DVN/LXU0WD) |
+| Barley | Plus CAIGE accessions (merged) | [10.7910/DVN/LXU0WD](https://doi.org/10.7910/DVN/LXU0WD), [10.7910/DVN/AMFC6F](https://doi.org/10.7910/DVN/AMFC6F), [10.7910/DVN/NIPYNS](https://doi.org/10.7910/DVN/NIPYNS) |
+| Chickpea | All Accessions | [10.7910/DVN/ECQ4NC](https://doi.org/10.7910/DVN/ECQ4NC) |
+| Field Pea | All Accessions | [10.7910/DVN/A6WGYS](https://doi.org/10.7910/DVN/A6WGYS) |
+| Lentil | All Accessions | [10.7910/DVN/T0TDAS](https://doi.org/10.7910/DVN/T0TDAS) |
+| Lupin | All Accessions | [10.7910/DVN/FVTFIL](https://doi.org/10.7910/DVN/FVTFIL) |
 
 PCA coordinate files are loaded from hosted TSV/TXT assets and joined with passport records fetched from Genesys via Genolink.
 
@@ -98,6 +99,18 @@ npm run start
 bun run lint
 ```
 
+### Check which accessions are missing passport data
+
+Some genotype IDs in a PCA file get no passport record from Genolink, so they don't appear in the plot or table. This includes IDs that aren't in AGG format (e.g. reference varieties like `Fathom-B00046-11-92`), which are skipped before querying. To list them:
+
+```bash
+bun run missing-passport                                  # every crop and subset
+bun run missing-passport Barley                           # one crop, all its subsets
+bun run missing-passport Barley "Plus CAIGE accessions"   # one dataset
+```
+
+Writes one TSV per dataset to `logs/missing-passport-<crop>-<subset>.tsv` (gitignored) with columns `genotypeID`, `inAllAccessions` (whether the ID is also in the crop's full dataset) and `reason`.
+
 ## Tech Stack
 
 - Next.js 16 (App Router)
@@ -133,6 +146,21 @@ The Custom List page lets a user look up a hand-picked set of accessions within 
 
 - No local `.env` configuration is required for core usage.
 
+### Data file naming
+
+PCA and PVE files are hosted in the project's Vercel Blob store and must be named:
+
+```
+<crop>-<release>-<subset>.<pcs|pve>.txt
+```
+
+- `<crop>`: lowercase kebab-case crop name (`wheat`, `field-pea`)
+- `<release>`: the source dataset's six-digit release (`YYMMDD`, e.g. `260430`)
+- `<subset>`: `all` for the full dataset, otherwise a short kebab-case description of the subset (`no-synthetics-no-mapping-pops`). Merged datasets name every source and its release, e.g. `barley-260430-plus-caige-260925.pcs.txt`
+- `pcs` = PCA coordinates, `pve` = proportion of variance explained
+
+Upload with no random suffix (`addRandomSuffix: false`) so the URL matches the file name, then reference it with `blobUrl('<file name>')` in `config/pca-location-config.ts`. A test in `config/pca-location-config.test.ts` enforces the format.
+
 ### Adding a new crop
 
 Add an entry to the `PCAFileInfo` map in `config/pca-location-config.ts`:
@@ -140,9 +168,9 @@ Add an entry to the `PCAFileInfo` map in `config/pca-location-config.ts`:
 ```ts
 ['<Crop Name>', {
     allAccessions: {
-        fileUrl: '<URL to PCA TSV/TXT file>',
-        doiTitle: '<Dataset title shown in the UI>',
-        doiUrl: 'https://doi.org/<DOI>'
+        fileUrl: blobUrl('<crop>-<release>-all.pcs.txt'),
+        citations: [{ title: '<Dataset title shown in the UI>', doiUrl: 'https://doi.org/<DOI>' }],
+        pveFileUrl: blobUrl('<crop>-<release>-all.pve.txt'), // optional
     },
 }],
 ```
@@ -158,17 +186,19 @@ Each crop can have any number of subsets — e.g. a filtered/regional cut of the
 
 ```ts
 ['<Crop Name>', {
-    allAccessions: { fileUrl: '...', doiTitle: '...', doiUrl: '...' },
+    allAccessions: { fileUrl: '...', citations: [...] },
     subsets: {
         '<Subset Name>': {
-            fileUrl: '<URL to the subset PCA TSV/TXT file>',
-            // doiTitle/doiUrl are optional — omit to inherit from `allAccessions`.
+            fileUrl: blobUrl('<crop>-<release>-<subset>.pcs.txt'),
+            // citations is optional — omit to inherit from `allAccessions`.
+            // pveFileUrl is NOT inherited — set it if the subset has its own PVE file.
         },
     },
 }],
 ```
 
 - The subset key (e.g. `'<Subset Name>'`) is what's used in the `?subset=` URL param, and is what appears in the subset dropdown next to the crop dropdown in the breadcrumb (`"All Accessions"` is always the first option and needs no config).
+- Merged datasets (built from more than one source) list every source in `citations`, primary first. The UI links the first one and shows a `+N` menu with the rest.
 - Subsets are scoped per crop — switching crop while on a subset name that doesn't exist for the new crop silently falls back to `"All Accessions"` data (the dropdown just won't show that name as an option for the new crop).
 
 ### Adding a new passport field from the Genolink / Genesys API

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import type { PCAPassportData } from '@/config/table-and-filter-config';
 import { PCAFileInfo, getDatasetInfo } from '@/config/pca-location-config';
 import { usePcaData } from '@/context/pca-data-context';
+import DatasetCitations from '@/components/dataset-citations';
 import { Button } from '@/components/ui/button';
 import {
   Select,
@@ -102,20 +103,12 @@ export default function CustomListPage() {
             <Sprout className="size-4 text-muted-foreground" />
             <h2 className="text-sm font-semibold tracking-tight">Crop</h2>
           </div>
-          <span className="text-xs text-muted-foreground">
-            Dataset:{' '}
-            {file && getDatasetInfo(file, subset) ? (
-              <a
-                href={getDatasetInfo(file, subset)!.doiUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-medium text-foreground underline-offset-4 hover:underline"
-              >
-                {getDatasetInfo(file, subset)!.doiTitle}
-              </a>
-            ) : (
-              <span className="font-medium text-foreground">—</span>
-            )}
+          <span className="inline-flex min-w-0 items-center gap-1 text-xs text-muted-foreground">
+            Dataset:
+            <DatasetCitations
+              citations={(file && getDatasetInfo(file, subset)?.citations) || []}
+              className="font-medium text-foreground underline-offset-4"
+            />
           </span>
         </header>
 

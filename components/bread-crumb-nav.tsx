@@ -1,6 +1,7 @@
 'use client';
 
-import { ChevronDown, FileText, Layers, Sprout, SquareArrowOutUpRight } from "lucide-react"
+import { ChevronDown, Layers, Sprout } from "lucide-react"
+import DatasetCitations from "@/components/dataset-citations"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -70,17 +71,10 @@ export default function BreadCrumbNav() {
         </BreadcrumbItem>
         <BreadcrumbSeparator />
         <BreadcrumbItem>
-          <BreadcrumbLink
-            href={selectedFileInfo?.doiUrl ?? "#"}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex max-w-[30vw] items-center gap-1.5 leading-none text-foreground hover:underline"
-            title={selectedFileInfo?.doiTitle ?? "DOI"}
-          >
-            <FileText className="size-3.5 shrink-0" />
-            <span className="truncate">{selectedFileInfo?.doiTitle ?? "DOI"}</span>
-            <SquareArrowOutUpRight className="size-4 shrink-0" />
-          </BreadcrumbLink>
+          <DatasetCitations
+            citations={selectedFileInfo?.citations ?? []}
+            className="max-w-[30vw] text-foreground"
+          />
         </BreadcrumbItem>
         <BreadcrumbSeparator />
         <BreadcrumbItem>
