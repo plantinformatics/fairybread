@@ -35,6 +35,14 @@ Where things live:
 - `components/ui`, `components/reui`: vendored component libraries. Avoid editing unless fixing a bug in them
 - README covers adding crops, subsets and passport fields
 
+## Data files
+
+- PCA/PVE files live in the Vercel Blob store and must be named `<crop>-<release>-<subset>.<pcs|pve>.txt`, e.g. `barley-260430-all.pcs.txt`. Full format in README "Data file naming". `config/pca-location-config.test.ts` fails on non-conforming names
+- `vercel blob put`/`copy` (CLI 50.x) adds a random suffix even with `--add-random-suffix false`. Upload with the `@vercel/blob` SDK and `addRandomSuffix: false` instead
+- `vercel link` overwrites `.env.local`. The Blob token is the `PCAFile_READ_WRITE_TOKEN` project env var; pass it as `BLOB_READ_WRITE_TOKEN`
+- Genolink rejects the whole request ("String format is not as expected.") if any genotype ID isn't AGG format. `lib/genolink-ids.ts` filters those out before querying. The Barley + CAIGE file has 13 such reference-variety IDs (e.g. `Fathom-B00046-11-92`), which don't appear in the plot. `bun run missing-passport` lists every ID without passport data per dataset
+- A dataset can cite several DOIs (`citations` array). Merged datasets list every source, primary first
+
 ## Before calling a change done
 
 - `bun run check` (typecheck + tests) must pass. CI also runs `bun run build`

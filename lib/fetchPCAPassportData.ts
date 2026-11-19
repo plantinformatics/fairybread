@@ -5,9 +5,8 @@ import chalk from 'chalk';
 import { parse } from "csv-parse/sync";
 
 import { replaceNullsWithMissing } from '@/lib/dataProcessing'
+import { GENOLINK_QUERY_URL, partitionGenolinkIds } from '@/lib/genolink-ids'
 import type { LoadProgress } from '@/lib/load-progress'
-
-const GENOLINK_QUERY_URL = 'https://genolink.plantinformatics.io/api/genesys/accession/query';
 
 /** Fetch options for the upstream file fetches. `noCache` bypasses the Next fetch cache entirely. */
 function fileFetchOptions(noCache: boolean): RequestInit {
@@ -126,8 +125,12 @@ export async function fetchPCAPassportData(
     ]);
     console.log(debug(`PCA file loaded in ${((performance.now() - pcaStart) / 1000).toFixed(2)}s`));
 
-    // Get genotype IDs
-    const genotypeIds = PCAData.map((p: any) => p.IID);
+    // Get genotype IDs. IDs Genolink can't parse would fail every page, so they're left out
+    // (they'd have no passport data to merge with anyway).
+    const { queryable: genotypeIds, unqueryable } = partitionGenolinkIds(PCAData.map((p: any) => p.IID));
+    if (unqueryable.length > 0) {
+      console.log(chalk.yellow(`⚠ Skipping ${unqueryable.length} non-AGG genotype IDs Genolink can't look up: ${unqueryable.join(', ')}`));
+    }
     
     const maxPassportDataLength = 3000; // keep the size of each page less than 2MB to enable nextJS caching
     const cacheTimeoutSeconds = 86400; // Cache timeout: 1 day (86400 seconds) - keep in sync with fileFetchOptions' revalidate above
