@@ -17,9 +17,13 @@ export function partitionGenolinkIds(ids: string[]): { queryable: string[]; unqu
 // (accession AGG 413162 BARL). The digit after the crop code and the batch suffix identify one genotyping run.
 const ACCESSION_PREFIX = /^AGG\d+[A-Z]+/;
 
-/** The accession a genotype ID belongs to, or undefined if it isn't an AGG genotype ID. */
-export function accessionOfGenotypeId(id: string): string | undefined {
-  return id.match(ACCESSION_PREFIX)?.[0];
+/**
+ * The accession a genotype ID belongs to, or undefined if it isn't an AGG genotype ID.
+ * Accepts Genolink's `genotypeID` as returned: an array when the request held several of the
+ * accession's genotype IDs (all share one accession, so the first is used).
+ */
+export function accessionOfGenotypeId(id: string | string[]): string | undefined {
+  return (Array.isArray(id) ? id[0] : id)?.match(ACCESSION_PREFIX)?.[0];
 }
 
 /**
@@ -27,16 +31,16 @@ export function accessionOfGenotypeId(id: string): string | undefined {
  *
  * An accession can be genotyped more than once, so several PCA rows can share one accession.
  * Genolink's accession query returns one passport row per accession no matter how many of its
- * genotype IDs are sent, and which ID it echoes back depends on the rest of the request. So each
+ * genotype IDs are sent, and which ID (or array of IDs) it echoes back depends on the rest of the request. So each
  * passport row is attached to every PCA row from its accession, and `genotypeID` is taken from
  * the PCA row so each genotyping run keeps its own identity. Rows from an accession with more than
  * one run also get `otherGenotypeIDs` (the accession's other runs in this dataset), so the UI can
  * flag them. PCA rows whose accession has no passport data are left out.
  */
-export function mergePassportByAccession<P extends { genotypeID: string }, R extends { IID: string }>(
+export function mergePassportByAccession<P extends { genotypeID: string | string[] }, R extends { IID: string }>(
   passportRows: P[],
   pcaRows: R[],
-): (P & { pca: R; otherGenotypeIDs?: string[] })[] {
+): (Omit<P, 'genotypeID'> & { genotypeID: string; pca: R; otherGenotypeIDs?: string[] })[] {
   const passportByAccession = new Map<string, P>();
   for (const passport of passportRows) {
     const accession = accessionOfGenotypeId(passport.genotypeID);

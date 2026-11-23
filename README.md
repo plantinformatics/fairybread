@@ -31,9 +31,9 @@ Fairybread currently supports the crops below. PCA coordinates for each crop are
 
 | Crop | Dataset | Public dataset (DOI) |
 |------|---------|------------------------|
-| Wheat | All Accessions | [10.7910/DVN/MOBTA8](https://doi.org/10.7910/DVN/MOBTA8) |
-| Barley | All Accessions | [10.7910/DVN/LXU0WD](https://doi.org/10.7910/DVN/LXU0WD) |
-| Barley | Plus CAIGE accessions (merged) | [10.7910/DVN/LXU0WD](https://doi.org/10.7910/DVN/LXU0WD), [10.7910/DVN/AMFC6F](https://doi.org/10.7910/DVN/AMFC6F), [10.7910/DVN/NIPYNS](https://doi.org/10.7910/DVN/NIPYNS) |
+| Wheat | All Accessions (AGG + CAIGE, merged) | [10.7910/DVN/MOBTA8](https://doi.org/10.7910/DVN/MOBTA8), [10.7910/DVN/SYYSDN](https://doi.org/10.7910/DVN/SYYSDN), [10.7910/DVN/7HVYFQ](https://doi.org/10.7910/DVN/7HVYFQ), [10.7910/DVN/BI1HIU](https://doi.org/10.7910/DVN/BI1HIU) |
+| Barley | All Accessions (AGG + CAIGE, merged) | [10.7910/DVN/LXU0WD](https://doi.org/10.7910/DVN/LXU0WD), [10.7910/DVN/AMFC6F](https://doi.org/10.7910/DVN/AMFC6F), [10.7910/DVN/NIPYNS](https://doi.org/10.7910/DVN/NIPYNS) |
+| Barley | AGG accessions only | [10.7910/DVN/LXU0WD](https://doi.org/10.7910/DVN/LXU0WD) |
 | Chickpea | All Accessions | [10.7910/DVN/ECQ4NC](https://doi.org/10.7910/DVN/ECQ4NC) |
 | Field Pea | All Accessions | [10.7910/DVN/A6WGYS](https://doi.org/10.7910/DVN/A6WGYS) |
 | Lentil | All Accessions | [10.7910/DVN/T0TDAS](https://doi.org/10.7910/DVN/T0TDAS) |
@@ -106,7 +106,7 @@ Some genotype IDs in a PCA file get no passport record from Genolink, so they do
 ```bash
 bun run missing-passport                                  # every crop and subset
 bun run missing-passport Barley                           # one crop, all its subsets
-bun run missing-passport Barley "Plus CAIGE accessions"   # one dataset
+bun run missing-passport Barley "AGG accessions only"   # one dataset
 ```
 
 Writes one TSV per dataset to `logs/missing-passport-<crop>-<subset>.tsv` (gitignored) with columns `genotypeID`, `inAllAccessions` (whether the ID is also in the crop's full dataset) and `reason`.

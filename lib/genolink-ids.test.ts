@@ -41,3 +41,13 @@ test("mergePassportByAccession gives every genotyping run of an accession its pa
     { genotypeID: "AGG420827BARL1-B00007-4-80", accessionName: "IG 24419", pca: pca[2] },
   ])
 })
+
+test("accessionOfGenotypeId reads Genolink's array form of genotypeID", () => {
+  expect(accessionOfGenotypeId(["AGG1036962WHEA2-B00046-7-89", "AGG1036962WHEA2-B00043-4-40"])).toBe("AGG1036962WHEA")
+})
+
+test("mergePassportByAccession matches passport rows whose genotypeID is an array", () => {
+  const passport = [{ genotypeID: ["AGG1036962WHEA2-B00046-7-89", "AGG1036962WHEA2-B00043-4-40"], accessionName: "X" }]
+  const pca = [{ IID: "AGG1036962WHEA2-B00046-7-89" }, { IID: "AGG1036962WHEA2-B00043-4-40" }]
+  expect(mergePassportByAccession(passport, pca).map((r) => r.genotypeID)).toEqual(pca.map((r) => r.IID))
+})

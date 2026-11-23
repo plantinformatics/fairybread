@@ -2,7 +2,7 @@
 //
 //   bun run missing-passport                     # every crop and subset
 //   bun run missing-passport Barley              # one crop, all its subsets
-//   bun run missing-passport Barley "Plus CAIGE accessions"
+//   bun run missing-passport Barley "AGG accessions only"
 //
 // Writes one TSV per dataset to logs/missing-passport-<crop>-<subset>.tsv with columns:
 // genotypeID, inAllAccessions (whether the ID is also in the crop's full dataset), reason.
@@ -32,7 +32,7 @@ async function fetchAccessionsWithPassport(ids: string[]): Promise<Set<string>> 
       body: JSON.stringify({ genotypeIds: ids }),
     });
     if (!response.ok) throw new Error(`Genolink page ${page} failed (${response.status}): ${(await response.text()).slice(0, 200)}`);
-    const { content = [] } = (await response.json()) as { content?: { genotypeID: string }[] };
+    const { content = [] } = (await response.json()) as { content?: { genotypeID: string | string[] }[] };
     return content.map((row) => accessionOfGenotypeId(row.genotypeID));
   }));
   return new Set(pages.flat().filter((accession) => accession !== undefined));
