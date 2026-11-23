@@ -4,12 +4,18 @@ import { ALL_ACCESSIONS_SUBSET, PCAFileInfo, getDatasetInfo } from './pca-locati
 const FILE_NAME_FORMAT = /^[a-z-]+-\d{6}-[a-z0-9-]+\.(pcs|pve)\.txt$/;
 
 describe('getDatasetInfo', () => {
-    test('merged subset lists every source citation, primary first', () => {
-        const info = getDatasetInfo('Barley', 'Plus CAIGE accessions');
+    test('merged dataset lists every source citation, primary first', () => {
+        const info = getDatasetInfo('Barley', ALL_ACCESSIONS_SUBSET);
         expect(info?.citations.map((c) => c.doiUrl)).toEqual([
             'https://doi.org/10.7910/DVN/LXU0WD',
             'https://doi.org/10.7910/DVN/AMFC6F',
             'https://doi.org/10.7910/DVN/NIPYNS',
+        ]);
+    });
+
+    test('subset with its own citations overrides allAccessions', () => {
+        expect(getDatasetInfo('Barley', 'AGG accessions only')?.citations.map((c) => c.doiUrl)).toEqual([
+            'https://doi.org/10.7910/DVN/LXU0WD',
         ]);
     });
 

@@ -30,36 +30,42 @@ const BLOB_BASE_URL = 'https://bry2ac73eslo6pzp.public.blob.vercel-storage.com';
 const blobUrl = (fileName: string) => `${BLOB_BASE_URL}/${fileName}`;
 
 const AGG_BARLEY_260430: DatasetCitation = { title: 'AGG Barley - Release 260430', doiUrl: 'https://doi.org/10.7910/DVN/LXU0WD' };
+const AGG_WHEAT_260619: DatasetCitation = { title: 'AGG Wheat - Release 260619', doiUrl: 'https://doi.org/10.7910/DVN/MOBTA8' };
 
 export const PCAFileInfo = new Map<string, PCACropConfig>([
     ['Barley', {
         allAccessions: {
-            fileUrl: blobUrl('barley-260430-all.pcs.txt'),
-            citations: [AGG_BARLEY_260430],
-            pveFileUrl: blobUrl('barley-260430-all.pve.txt'),
+            fileUrl: blobUrl('barley-260430-plus-caige-260925.pcs.txt'),
+            pveFileUrl: blobUrl('barley-260430-plus-caige-260925.pve.txt'),
+            citations: [
+                AGG_BARLEY_260430,
+                { title: 'CAIGE Barley - Wheat Barley 40K array v1.1 - Release 260925', doiUrl: 'https://doi.org/10.7910/DVN/AMFC6F' },
+                { title: 'CAIGE Barley - Wheat Barley 40K array v1.2 - Release 260925', doiUrl: 'https://doi.org/10.7910/DVN/NIPYNS' },
+            ],
         },
         subsets: {
-            'Plus CAIGE accessions': {
-                fileUrl: blobUrl('barley-260430-plus-caige-260925.pcs.txt'),
-                pveFileUrl: blobUrl('barley-260430-plus-caige-260925.pve.txt'),
-                citations: [
-                    AGG_BARLEY_260430,
-                    { title: 'CAIGE Barley - Wheat Barley 40K array v1.1 - Release 260925', doiUrl: 'https://doi.org/10.7910/DVN/AMFC6F' },
-                    { title: 'CAIGE Barley - Wheat Barley 40K array v1.2 - Release 260925', doiUrl: 'https://doi.org/10.7910/DVN/NIPYNS' },
-                ],
+            'AGG accessions only': {
+                fileUrl: blobUrl('barley-260430-all.pcs.txt'),
+                pveFileUrl: blobUrl('barley-260430-all.pve.txt'),
+                citations: [AGG_BARLEY_260430],
             },
         },
     }],
     ['Wheat', {
         allAccessions: {
-            fileUrl: blobUrl('wheat-260619-all.pcs.txt'),
-            citations: [{ title: 'AGG Wheat - Release 260619', doiUrl: 'https://doi.org/10.7910/DVN/MOBTA8' }],
-            pveFileUrl: blobUrl('wheat-260619-all.pve.txt'),
+            fileUrl: blobUrl('wheat-260619-plus-caige-260918.pcs.txt'),
+            pveFileUrl: blobUrl('wheat-260619-plus-caige-260918.pve.txt'),
+            citations: [
+                AGG_WHEAT_260619,
+                { title: 'CAIGE Bread Wheat - Wheat Barley 40K array v1.1 - Release 260918', doiUrl: 'https://doi.org/10.7910/DVN/SYYSDN' },
+                { title: 'CAIGE Bread Wheat - Wheat Barley 40K array v1.2 - Release 260918', doiUrl: 'https://doi.org/10.7910/DVN/7HVYFQ' },
+                { title: 'CAIGE Bread Wheat Disease Core - Release 260918', doiUrl: 'https://doi.org/10.7910/DVN/BI1HIU' },
+            ],
         },
         subsets: {
             'Excluding synthetic wheats and mapping populations': {
-                fileUrl: blobUrl('wheat-260619-no-synthetics-no-mapping-pops.pcs.txt'),
-                pveFileUrl: blobUrl('wheat-260619-no-synthetics-no-mapping-pops.pve.txt'),
+                fileUrl: blobUrl('wheat-260619-plus-caige-260918-no-synthetics-no-mapping-pops.pcs.txt'),
+                pveFileUrl: blobUrl('wheat-260619-plus-caige-260918-no-synthetics-no-mapping-pops.pve.txt'),
             },
         },
     }],
