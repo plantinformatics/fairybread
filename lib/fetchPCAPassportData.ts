@@ -7,14 +7,15 @@ import { parse } from "csv-parse/sync";
 import { joinListFields, replaceNullsWithMissing } from '@/lib/dataProcessing'
 import { GENOLINK_QUERY_URL, mergePassportByAccession, partitionGenolinkIds } from '@/lib/genolink-ids'
 import type { LoadProgress } from '@/lib/load-progress'
+import { datasetCacheTags } from '@/lib/cache-tags'
 
 /** Fetch options for the upstream file fetches. `noCache` bypasses the Next fetch cache entirely. */
-function fileFetchOptions(noCache: boolean): RequestInit {
-  return noCache ? { cache: 'no-store' } : { next: { revalidate: 86400 } }; // one day in seconds, don't forget to align with cacheTimeoutSeconds
+function fileFetchOptions(noCache: boolean, tags: string[]): RequestInit {
+  return noCache ? { cache: 'no-store' } : { next: { revalidate: 86400, tags } }; // one day in seconds, don't forget to align with cacheTimeoutSeconds
 }
 
-async function fetchAndParsePCAFile(PCAFileURL: string, noCache: boolean): Promise<any> {
-  const response = await fetch(PCAFileURL, fileFetchOptions(noCache));
+async function fetchAndParsePCAFile(PCAFileURL: string, noCache: boolean, tags: string[]): Promise<any> {
+  const response = await fetch(PCAFileURL, fileFetchOptions(noCache, tags));
   if (!response.ok) {
     const errorText = await response.text();
     console.log(chalk.red(`Error response: ${errorText.substring(0, 200)}`));
@@ -35,9 +36,9 @@ async function fetchAndParsePCAFile(PCAFileURL: string, noCache: boolean): Promi
  * Fetches a one-value-per-line PVE file (proportions for PC1, PC2, …).
  * Returns null on any failure so PCA loading is never blocked by a missing PVE file.
  */
-async function fetchAndParsePveFile(pveFileUrl: string, noCache: boolean): Promise<number[] | null> {
+async function fetchAndParsePveFile(pveFileUrl: string, noCache: boolean, tags: string[]): Promise<number[] | null> {
   try {
-    const response = await fetch(pveFileUrl, fileFetchOptions(noCache));
+    const response = await fetch(pveFileUrl, fileFetchOptions(noCache, tags));
     if (!response.ok) {
       console.log(chalk.yellow(`⚠ PVE file fetch failed (${response.status}): ${pveFileUrl}`));
       return null;
@@ -116,12 +117,14 @@ export async function fetchPCAPassportData(
       throw new Error('Invalid PCA file');
     }
 
+    // Shared by every cache entry for this dataset so the settings page can force a refresh
+    const cacheTags = datasetCacheTags(PCAFile, subset);
     onProgress({ stage: 'pca-file' });
 
     const pcaStart = performance.now();
     const [PCAData, pve] = await Promise.all([
-      fetchAndParsePCAFile(fileInfo.fileUrl, noCache),
-      fileInfo.pveFileUrl ? fetchAndParsePveFile(fileInfo.pveFileUrl, noCache) : Promise.resolve(null),
+      fetchAndParsePCAFile(fileInfo.fileUrl, noCache, cacheTags),
+      fileInfo.pveFileUrl ? fetchAndParsePveFile(fileInfo.pveFileUrl, noCache, cacheTags) : Promise.resolve(null),
     ]);
     console.log(debug(`PCA file loaded in ${((performance.now() - pcaStart) / 1000).toFixed(2)}s`));
 
@@ -158,7 +161,7 @@ export async function fetchPCAPassportData(
               [`passport-data-${PCAFile}-${subset}-page-${pageNumber}`],
               {
                 revalidate: cacheTimeoutSeconds,
-                tags: [`passport-data`, `passport-data-${PCAFile}`, `passport-data-${PCAFile}-${subset}`]
+                tags: cacheTags
               }
             )(pageNumber, genotypeIds, selectFields, maxPassportDataLength);
 
