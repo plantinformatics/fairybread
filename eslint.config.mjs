@@ -13,6 +13,7 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    ".claude/**",
   ]),
   {
     linterOptions: { reportUnusedDisableDirectives: "error" },
@@ -50,6 +51,14 @@ const eslintConfig = defineConfig([
           ],
         },
       ],
+    },
+  },
+  {
+    files: vendored,
+    linterOptions: { reportUnusedDisableDirectives: "off" },
+    rules: {
+      "react-hooks/set-state-in-effect": "off",
+      "@typescript-eslint/no-unused-vars": "off",
     },
   },
   {
