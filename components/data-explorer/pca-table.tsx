@@ -49,15 +49,10 @@ export function PcaTable({
   });
   const [columnOrder, setColumnOrder] = useState<string[]>(columns.map((column) => column.id as string));
   const [sorting, setSorting] = useState<SortingState>([{ id: 'Genotype ID', desc: false }]);
-  const [tableData, setTableData] = useState<PCAPassportData[]>([])
-  const previousGroupByRef = useRef<string>(groupBy);
-  const isAutoTextFilterGroupByRef = useRef<boolean>(false);
+  const groupByBeforeTextFilterRef = useRef<string | null>(null);
   const { customList } = useCustomList();
   const { palette } = usePreferences();
 
-  // Inject a "Custom List" filter option that is powered by the user's
-  // current custom list. It filters rows by `genotypeID` and is disabled
-  // (greyed out in the add-filter menu) whenever the list is empty.
   const fieldsWithCustomList = useMemo<FilterFieldConfig[]>(() => {
     const customListField: FilterFieldConfig = {
       key: CUSTOM_LIST_FILTER_KEY,
@@ -79,18 +74,23 @@ export function PcaTable({
     return [...fields, customListField];
   }, [customList]);
 
+  const tableData = useMemo(() => {
+    if (chartSelection.IID.length === 0) return rawData;
+    const byGenotypeID = new Map(rawData.map((p) => [p.genotypeID, p]));
+    return chartSelection.IID
+      .map((id) => byGenotypeID.get(id))
+      .filter((p): p is PCAPassportData => Boolean(p));
+  }, [chartSelection, rawData]);
+
+  const resetToFirstPage = () => setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+
   const { filters, appliedFilters, filteredData, handleFiltersChange, clearFilters } =
   useTableFilters<PCAPassportData>({
     tableData,
     fields: fieldsWithCustomList,
-    onFiltersChange: () => {
-      setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-    },
+    onFiltersChange: resetToFirstPage,
   });
 
-  // Column accessorKeys that currently have a non-empty *applied* filter
-  // (customList → genotypeID). Uses the debounced filters so colour-map
-  // rebuilds stay in sync with the plot, not every keystroke.
   const activeFilterFields = useMemo(() => {
     const fields: string[] = [];
     for (const filter of appliedFilters) {
@@ -101,9 +101,7 @@ export function PcaTable({
     return fields;
   }, [appliedFilters]);
 
-  // Per-column colour maps for the active group-by and any filtered columns.
-  // When filters force groupBy to `TEXT_FILTER_GROUP_BY`, filtered columns still get
-  // value-based colours (rather than `MATCH_GROUP` / `NOT_MATCH_GROUP`) so the table dots stay useful.
+  // Filtered columns get value-based colours, not match/no-match, so the table dots stay useful under the text-filter group-by.
   const columnColorMaps = useMemo(() => {
     const maps = new Map<string, Map<string, string>>();
     const fieldsToColor = new Set<string>(activeFilterFields);
@@ -121,45 +119,27 @@ export function PcaTable({
     return maps;
   }, [activeFilterFields, groupBy, rawData, tableFiltered, palette]);
 
-  useEffect(() => {
-    const byGenotypeID = new Map(rawData.map((p) => [p.genotypeID, p]));
-    const plotSelectedData =
-      chartSelection.IID.length > 0
-        ? chartSelection.IID.map((id) => byGenotypeID.get(id)).filter(Boolean) as PCAPassportData[]
-        : rawData;
-    setTableData(plotSelectedData);
-  }, [chartSelection, rawData]);
-
-  // Auto-switch groupBy once applied filters settle (same debounce as the plot).
-  const hasTextFilterInput = useMemo(() => {
-    return appliedFilters.some((filter) =>
-      (filter.values ?? []).some((value) => String(value).trim() !== "")
-    );
-  }, [appliedFilters]);
+  const hasActiveFilter = activeFilterFields.length > 0;
 
   useEffect(() => {
-    if (hasTextFilterInput) {
+    if (hasActiveFilter) {
       if (groupBy !== TEXT_FILTER_GROUP_BY) {
-        previousGroupByRef.current = groupBy;
-        isAutoTextFilterGroupByRef.current = true;
+        groupByBeforeTextFilterRef.current = groupBy;
         setGroupBy(TEXT_FILTER_GROUP_BY);
       }
       return;
     }
 
-    if (isAutoTextFilterGroupByRef.current && groupBy === TEXT_FILTER_GROUP_BY) {
-      isAutoTextFilterGroupByRef.current = false;
-      if (previousGroupByRef.current !== TEXT_FILTER_GROUP_BY) {
-        setGroupBy(previousGroupByRef.current);
-      }
-      return;
+    const groupByBeforeTextFilter = groupByBeforeTextFilterRef.current;
+    if (groupByBeforeTextFilter !== null && groupBy === TEXT_FILTER_GROUP_BY) {
+      groupByBeforeTextFilterRef.current = null;
+      setGroupBy(groupByBeforeTextFilter);
     }
-  }, [groupBy, hasTextFilterInput, setGroupBy]);
+  }, [groupBy, hasActiveFilter, setGroupBy]);
 
   useEffect(() => {
-    const byGenotypeID = { IID: filteredData.map((p:any) => p.genotypeID)}
-    setTableFiltered(byGenotypeID)
-  }, [filteredData])
+    setTableFiltered({ IID: filteredData.map((p) => p.genotypeID) });
+  }, [filteredData, setTableFiltered]);
 
   const table = useReactTable({
     columns,
