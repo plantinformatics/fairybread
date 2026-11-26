@@ -5,13 +5,15 @@ import chalk from 'chalk';
 import { parse } from "csv-parse/sync";
 
 import { joinListFields, replaceNullsWithMissing } from '@/lib/dataProcessing'
-import { GENOLINK_QUERY_URL, mergePassportByAccession, partitionGenolinkIds } from '@/lib/genolink-ids'
+import { GENOLINK_PAGE_SIZE, GENOLINK_QUERY_URL, mergePassportByAccession, partitionGenolinkIds } from '@/lib/genolink-ids'
 import type { LoadProgress } from '@/lib/load-progress'
 import { datasetCacheTags } from '@/lib/cache-tags'
 
+const CACHE_TTL_SECONDS = 24 * 60 * 60;
+
 /** Fetch options for the upstream file fetches. `noCache` bypasses the Next fetch cache entirely. */
 function fileFetchOptions(noCache: boolean, tags: string[]): RequestInit {
-  return noCache ? { cache: 'no-store' } : { next: { revalidate: 86400, tags } }; // one day in seconds, don't forget to align with cacheTimeoutSeconds
+  return noCache ? { cache: 'no-store' } : { next: { revalidate: CACHE_TTL_SECONDS, tags } };
 }
 
 async function fetchAndParsePCAFile(PCAFileURL: string, noCache: boolean, tags: string[]): Promise<any> {
@@ -133,10 +135,8 @@ export async function fetchPCAPassportData(
       console.log(chalk.yellow(`⚠ Skipping ${unqueryable.length} non-AGG genotype IDs Genolink can't look up: ${unqueryable.join(', ')}`));
     }
     
-    const maxPassportDataLength = 3000; // keep the size of each page less than 2MB to enable nextJS caching
-    const cacheTimeoutSeconds = 86400; // Cache timeout: 1 day (86400 seconds) - keep in sync with fileFetchOptions' revalidate above
     const totalSamples = genotypeIds.length;
-    const totalPages = Math.ceil(totalSamples / maxPassportDataLength);
+    const totalPages = Math.ceil(totalSamples / GENOLINK_PAGE_SIZE);
     const selectFields = passportDataSelectFields.join(',');
     
     console.log(debug(`Total samples requested: ${totalSamples}`));
@@ -152,15 +152,15 @@ export async function fetchPCAPassportData(
         const startTime = performance.now();
 
         const pageData = noCache
-          ? await fetchPassportPage(pageNumber, genotypeIds, selectFields, maxPassportDataLength)
+          ? await fetchPassportPage(pageNumber, genotypeIds, selectFields, GENOLINK_PAGE_SIZE)
           : await unstable_cache(
               fetchPassportPage,
               [`passport-data-${PCAFile}-${subset}-page-${pageNumber}`],
               {
-                revalidate: cacheTimeoutSeconds,
+                revalidate: CACHE_TTL_SECONDS,
                 tags: cacheTags
               }
-            )(pageNumber, genotypeIds, selectFields, maxPassportDataLength);
+            )(pageNumber, genotypeIds, selectFields, GENOLINK_PAGE_SIZE);
 
         const requestDuration = ((performance.now() - startTime) / 1000).toFixed(2);
         const pageContent = (pageData.content || []).map((item) => replaceNullsWithMissing(joinListFields(item)));

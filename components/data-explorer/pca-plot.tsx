@@ -5,7 +5,7 @@ import posthog from "posthog-js";
 
 import { buildGroupedEntries, createPlotData } from "@/lib/dataProcessing";
 import { chartConfig, buildChartLayout } from "@/config/chart-config";
-import type { PCAPassportData } from "@/config/table-and-filter-config";
+import { groupByLabel, type PCAPassportData } from "@/config/table-and-filter-config";
 import { LoadingOverlay } from "@/components/data-explorer/pca-plot-loading-overlay";
 import { usePreferences } from "@/context/preferences-context";
 import type { LoadProgress } from "@/lib/load-progress";
@@ -69,7 +69,7 @@ export function PcaPlot({
   useEffect(()=>{
     setLoading(true);
     const groupedEntries = buildGroupedEntries(rawData, groupBy, tableFiltered.IID);
-    setData(createPlotData(groupedEntries, groupBy, pcAxes));
+    setData(createPlotData(groupedEntries, groupBy, groupByLabel(groupBy), pcAxes));
     setLoading(false);
   }, [rawData, groupBy, tableFiltered, pcAxes])
 

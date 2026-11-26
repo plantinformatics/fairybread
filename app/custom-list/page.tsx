@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import type { PCAPassportData } from '@/config/table-and-filter-config';
 import { PCAFileInfo, getDatasetInfo } from '@/config/pca-location-config';
 import { usePcaData } from '@/context/pca-data-context';
+import { doiUrl, genesysAccessionUrl } from '@/lib/accession-links';
 import DatasetCitations from '@/components/dataset-citations';
 import { Button } from '@/components/ui/button';
 import {
@@ -216,10 +217,9 @@ export default function CustomListPage() {
                             {row.accessionName || '—'}
                           </td>
                           <td className="py-2 pr-4">
-                            {/* Genesys uses the DOI as the record URL, not the accession number */}
                             {row.doi ? (
                               <a
-                                href={`https://www.genesys-pgr.org/${row.doi}`}
+                                href={genesysAccessionUrl(row.doi)}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="font-bold underline-offset-4 hover:underline"
@@ -236,7 +236,7 @@ export default function CustomListPage() {
                           <td className="py-2">
                             {row.doi ? (
                               <a
-                                href={`https://doi.org/${row.doi}`}
+                                href={doiUrl(row.doi)}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="text-xs underline-offset-4 hover:underline"

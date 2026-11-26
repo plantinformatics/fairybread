@@ -203,7 +203,12 @@ Each crop can have any number of subsets — e.g. a filtered/regional cut of the
 
 ### Adding a new passport field from the Genolink / Genesys API
 
-Edit `config/table-and-filter-config.tsx`: extend the `PCAPassportData` type and add a column entry whose `accessorKey` matches the API field name (dot notation for nested fields, e.g. `countryOfOrigin.name`). The `accessorKey`s are automatically forwarded to Genolink as the `select` param, rendered in the table, and exposed as filters. See the comment at the top of that file for a step-by-step.
+Each column's `accessorKey` in `config/table-and-filter-config.tsx` is forwarded to Genolink as a `select` field, rendered in the table, and exposed as a filter. To add one:
+
+1. Find the field name in the [Genolink/Genesys accession schema](https://genolink.plantinformatics.io/). Nested fields use dot notation, e.g. `countryOfOrigin.name`.
+2. Add it to the `PCAPassportData` type. A column's `accessorKey` must be a key of this type, or typecheck fails.
+3. Add an entry to `columns` with `accessorKey` set to the exact API field name, plus an `id` (the display name), `header`, and `meta.filter` (label + lucide icon). Set `enableGrouping: true` to offer it in the plot's group-by menu.
+4. For a dotted field also set `accessorFn: (row) => row["<field>"]`: Genolink rows are flat, but TanStack reads a dotted `accessorKey` as a nested path. `config/table-and-filter-config.test.ts` fails if it's missing.
 
 ## Acknowledgements
 FairyBread is funded by the Australian Grains Genebank (AGG) Strategic Partnership, a $30M joint investment between the Victorian State Government and the Grains Research and Development Corporation (GRDC) that aims to unlock the genetic potential of plant genetic resources for the benefit of Australian grain growers.

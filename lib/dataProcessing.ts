@@ -1,14 +1,23 @@
 import type { PcAxes } from '@/context/preferences-context';
 import { chartColourPalettes } from '@/config/chart-config';
 
+/** Group-by mode that splits rows into `MATCH_GROUP` / `NOT_MATCH_GROUP` by the table filters. */
+export const TEXT_FILTER_GROUP_BY = "textFilter";
+/** Stands in for a null passport value (see `replaceNullsWithMissing`), and names the group of such rows. */
+export const MISSING_VALUE = "N/A";
+export const MATCH_GROUP = "Match";
+export const NOT_MATCH_GROUP = "Not Match";
+/** Rows outside the largest groups (see `extractSortAndFilter`). */
+export const OTHER_GROUP = "Other";
+
 export function extractSortAndFilter(PCAPassportData: any[], groupingValue: string, numberOfEntries: number) {
     const groupedPCAPassport = Object.groupBy(PCAPassportData, (p: any) => p[groupingValue]);
-    const missing = groupedPCAPassport["N/A"] || [];
-    delete groupedPCAPassport["N/A"];
+    const missing = groupedPCAPassport[MISSING_VALUE] || [];
+    delete groupedPCAPassport[MISSING_VALUE];
     const sorted = Object.entries(groupedPCAPassport).sort((a: any, b: any) => b[1].length - a[1].length);
     const top = sorted.slice(0, numberOfEntries);
     const rest = sorted.slice(numberOfEntries).flatMap(([, arr]: any) => arr);
-    return [...top, ["Other", rest], ["N/A", missing]];
+    return [...top, [OTHER_GROUP, rest], [MISSING_VALUE, missing]];
   }
 
 /**
@@ -22,15 +31,25 @@ export function buildGroupedEntries(
   matchedGenotypeIDs: string[] = [],
   numberOfEntries: number = 15,
 ): [string, any[]][] {
-  if (groupingValue === "textFilter") {
+  if (groupingValue === TEXT_FILTER_GROUP_BY) {
     const matchedSet = new Set(matchedGenotypeIDs);
     const groupedData = Object.groupBy(
       rawData,
-      (item: any) => (matchedSet.has(item.genotypeID) ? "Match" : "Not Match"),
+      (item: any) => (matchedSet.has(item.genotypeID) ? MATCH_GROUP : NOT_MATCH_GROUP),
     );
     return Object.entries(groupedData) as [string, any[]][];
   }
   return extractSortAndFilter(rawData, groupingValue, numberOfEntries) as [string, any[]][];
+}
+
+/**
+ * Moves the `MATCH_GROUP` group last so its trace is drawn on top; other groups keep their order.
+ * Plotly colours traces by index, so anything colouring by group must use this order too.
+ * Z order manipulation is only supported in scatter, not scattergl, so trace order is the only way.
+ * See https://github.com/plotly/plotly.js/pull/6918
+ */
+export function orderGroupsForPlot<T extends [string, unknown]>(groupedEntries: T[]): T[] {
+  return [...groupedEntries].sort(([a], [b]) => Number(a === MATCH_GROUP) - Number(b === MATCH_GROUP));
 }
 
 /**
@@ -46,12 +65,7 @@ export function buildRowColorMap(
   const colorMap = new Map<string, string>();
   if (!colors.length) return colorMap;
 
-  // Mirrors the "Selected" group ordering used when building plot traces.
-  const entries = [...groupedEntries].sort(
-    ([a]: any, [b]: any) => Number(a === "Selected") - Number(b === "Selected"),
-  );
-
-  entries.forEach(([, items]: any, index) => {
+  orderGroupsForPlot(groupedEntries).forEach(([, items]: any, index) => {
     const color = colors[index % colors.length];
     for (const item of items) {
       colorMap.set(item.genotypeID, color);
@@ -61,19 +75,15 @@ export function buildRowColorMap(
   return colorMap;
 }
 
+/** `groupingLabel` is the display name of `groupingValue`, shown in the hover label. */
 export function createPlotData(
-  groupedData: any[],
+  groupedData: [string, any[]][],
   groupingValue: string,
+  groupingLabel: string,
   pcAxes: PcAxes,
 ) {
     const { x: pcx, y: pcy, z: pcz } = pcAxes;
-    // This is the only way to ensure that the Selected group is drawn on the top
-    // Z order manipulation is only supported in scatter not scattergl type
-    // See https://github.com/plotly/plotly.js/pull/6918
-    const entries = [...groupedData].sort(
-      ([a]: any, [b]: any) => Number(a === "Match") - Number(b === "Selected")
-    )
-    return entries.map(([key, value]: any) => {
+    return orderGroupsForPlot(groupedData).map(([key, value]) => {
       return {
         x: value.map((p: any) => p.pca[pcx]),
         y: value.map((p: any) => p.pca[pcy]),
@@ -81,11 +91,11 @@ export function createPlotData(
         text: value.map((p: any) => p.pca.IID),
         customdata: value.map((p: any) => [
           p.accessionName,
-          p[groupingValue] ?? "N/A",
+          groupingValue === TEXT_FILTER_GROUP_BY ? key : p[groupingValue] ?? MISSING_VALUE,
           p.otherGenotypeIDs ? `<b>Also genotyped as:</b> ${p.otherGenotypeIDs.join(", ")}<br>` : "",
         ]),
         name: (key.length < 20 ? key : key.substring(0, 17) + "...") + " (" + value.length + ")",
-        opacity: key === "Match" ? 0.8 : 0.5,
+        opacity: key === MATCH_GROUP ? 0.8 : 0.5,
         mode: "markers",
         type: pcz ? "scatter3d" : "scattergl",
         marker: pcz ? { size: 3 } : { size: 5 },
@@ -96,7 +106,7 @@ export function createPlotData(
         `<b>${pcx}:</b> %{x:.2f}<br>` +
         `<b>${pcy}:</b> %{y:.2f}<br>` +
         (pcz ? `<b>${pcz}:</b> %{z:.2f}<br>` : "") +
-        `<b>${groupingValue}:</b> %{customdata[1]}<br>` + // need to refactor this to reference the name, rather than what is used in the API call
+        `<b>${groupingLabel}:</b> %{customdata[1]}<br>` +
         "<extra></extra>",
       }
     })
@@ -117,7 +127,7 @@ export function joinListFields(row: Record<string, unknown>): Record<string, unk
 }
 
 export function replaceNullsWithMissing(value: any): any {
-  if (value === null) return 'N/A';
+  if (value === null) return MISSING_VALUE;
 
   if (Array.isArray(value)) {
     return value.map(replaceNullsWithMissing);

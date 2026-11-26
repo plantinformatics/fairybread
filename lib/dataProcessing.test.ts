@@ -4,8 +4,13 @@ import {
   buildRowColorMap,
   createPlotData,
   joinListFields,
+  MATCH_GROUP,
+  NOT_MATCH_GROUP,
+  orderGroupsForPlot,
   replaceNullsWithMissing,
+  TEXT_FILTER_GROUP_BY,
 } from "@/lib/dataProcessing"
+import { chartColourPalettes } from "@/config/chart-config"
 
 const row = (genotypeID: string, country: string) => ({
   genotypeID,
@@ -77,17 +82,78 @@ describe("buildRowColorMap", () => {
   })
 })
 
+describe("orderGroupsForPlot", () => {
+  test("moves the Match group last wherever it starts", () => {
+    const keys = (entries: [string, unknown][]) => orderGroupsForPlot(entries).map(([key]) => key)
+    expect(keys([[MATCH_GROUP, []], [NOT_MATCH_GROUP, []]])).toEqual([NOT_MATCH_GROUP, MATCH_GROUP])
+    expect(keys([[NOT_MATCH_GROUP, []], [MATCH_GROUP, []]])).toEqual([NOT_MATCH_GROUP, MATCH_GROUP])
+  })
+
+  test("keeps the order of the other groups", () => {
+    const entries: [string, unknown][] = [["C", []], [MATCH_GROUP, []], ["A", []], ["B", []]]
+    expect(orderGroupsForPlot(entries).map(([key]) => key)).toEqual(["C", "A", "B", MATCH_GROUP])
+  })
+
+  test("does not mutate its input", () => {
+    const entries: [string, unknown][] = [[MATCH_GROUP, []], [NOT_MATCH_GROUP, []]]
+    orderGroupsForPlot(entries)
+    expect(entries.map(([key]) => key)).toEqual([MATCH_GROUP, NOT_MATCH_GROUP])
+  })
+})
+
 describe("createPlotData", () => {
-  const groups = [["AUS", [row("1", "AUS")]]]
+  const axes = { x: "PC1", y: "PC2", z: null } as const
+  const groups: [string, ReturnType<typeof row>[]][] = [["AUS", [row("1", "AUS")]]]
+  const textFilterGroups = () => buildGroupedEntries([row("1", "AUS"), row("2", "IND")], TEXT_FILTER_GROUP_BY, ["1"])
 
   test("builds a 2D scattergl trace when no z axis is set", () => {
-    const [trace] = createPlotData(groups, "country", { x: "PC1", y: "PC2", z: null })
+    const [trace] = createPlotData(groups, "country", "Country", axes)
     expect(trace).toMatchObject({ type: "scattergl", x: [1], y: [2], text: ["1"] })
     expect(trace).not.toHaveProperty("z")
   })
 
   test("builds a scatter3d trace when a z axis is set", () => {
-    const [trace] = createPlotData(groups, "country", { x: "PC1", y: "PC2", z: "PC3" })
+    const [trace] = createPlotData(groups, "country", "Country", { x: "PC1", y: "PC2", z: "PC3" })
     expect(trace).toMatchObject({ type: "scatter3d", z: [3] })
   })
+
+  test("draws the Match group last so it sits on top", () => {
+    const grouped = textFilterGroups()
+    expect(grouped[0][0]).toBe(MATCH_GROUP)
+    const traces = createPlotData(grouped, TEXT_FILTER_GROUP_BY, "Text filter", axes)
+    expect(traces.map((trace) => trace.text)).toEqual([["2"], ["1"]])
+  })
+
+  test("labels the group-by value in the hover with its display name", () => {
+    const [trace] = createPlotData(groups, "country", "Country of Origin", axes)
+    expect(trace.hovertemplate).toContain("<b>Country of Origin:</b> %{customdata[1]}")
+    expect(trace.customdata[0][1]).toBe("AUS")
+  })
+
+  test("shows the match group as the hover value when grouped by text filter", () => {
+    const traces = createPlotData(textFilterGroups(), TEXT_FILTER_GROUP_BY, "Text filter", axes)
+    expect(traces.map((trace) => trace.customdata[0][1])).toEqual([NOT_MATCH_GROUP, MATCH_GROUP])
+  })
 })
+
+describe("buildRowColorMap matches the plot", () => {
+  const palette = "Vibrant"
+  const colors = chartColourPalettes.get(palette)!
+
+  // Plotly colours trace i with colorway[i], so each row's table colour must be its trace's colour.
+  const expectColoursMatchTraces = (groups: [string, ReturnType<typeof row>[]][], groupBy: string) => {
+    const colorMap = buildRowColorMap(groups, palette)
+    createPlotData(groups, groupBy, groupBy, { x: "PC1", y: "PC2", z: null }).forEach((trace, index) => {
+      for (const id of trace.text) expect(colorMap.get(id)).toBe(colors[index % colors.length])
+    })
+  }
+
+  test("for a column group-by", () => {
+    expectColoursMatchTraces(buildGroupedEntries([row("1", "AUS"), row("2", "IND"), row("3", "AUS")], "country"), "country")
+  })
+
+  test("for the text filter group-by when the first row is a match", () => {
+    expectColoursMatchTraces(buildGroupedEntries([row("1", "AUS"), row("2", "IND")], TEXT_FILTER_GROUP_BY, ["1"]), TEXT_FILTER_GROUP_BY)
+  })
+})
+

@@ -1,5 +1,8 @@
 export const GENOLINK_QUERY_URL = 'https://genolink.plantinformatics.io/api/genesys/accession/query';
 
+/** Passport rows per Genolink page. Keeps each page under Next's 2MB data cache limit. */
+export const GENOLINK_PAGE_SIZE = 3000;
+
 // Genolink only accepts AGG genotype IDs (`AGG<accession><crop code><n>-...`, e.g. `AGG409530BARL1-B00001-1-02`).
 // A single ID in any other format (e.g. a reference variety like `Fathom-B00046-11-92`) makes
 // Genolink reject the whole request with "String format is not as expected."
