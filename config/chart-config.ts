@@ -36,7 +36,6 @@ export const chartLayout = {
     selectdirection: "any" as const,
     colorway: "",
     modebar: {
-      // vertical modebar button layout
       orientation: 'v' as const,
       margin: 10,
     },
@@ -56,7 +55,7 @@ export const chartLayout = {
     margin: {
       r: 265, // added so controls do not overlap with the legend
       l: 50, 
-      t: 0, // remove top space for the title
+      t: 0,
       b: 50,
       pad: 4
     },
@@ -157,7 +156,6 @@ export function buildChartLayout(
   };
 }
 
-// Config for the chart
 export const chartConfig = {
     displayModeBar: true,
     scrollZoom: true,

@@ -83,7 +83,7 @@ export function PcaTable({
   useTableFilters<PCAPassportData>({
     tableData,
     fields: fieldsWithCustomList,
-    onFiltersChange: () => { // resert page to 0 when a filter is applied
+    onFiltersChange: () => {
       setPagination((prev) => ({ ...prev, pageIndex: 0 }));
     },
   });
@@ -121,7 +121,6 @@ export function PcaTable({
     return maps;
   }, [activeFilterFields, groupBy, rawData, tableFiltered, palette]);
 
-  // Chart selection logic
   useEffect(() => {
     const byGenotypeID = new Map(rawData.map((p) => [p.genotypeID, p]));
     const plotSelectedData =
@@ -157,7 +156,6 @@ export function PcaTable({
     }
   }, [groupBy, hasTextFilterInput, setGroupBy]);
 
-  // Used to create the subset for pca-plot
   useEffect(() => {
     const byGenotypeID = { IID: filteredData.map((p:any) => p.genotypeID)}
     setTableFiltered(byGenotypeID)

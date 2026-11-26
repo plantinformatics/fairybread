@@ -7,6 +7,7 @@
 - Be bold with larger changes if it meaningfully improves efficiency to code readability.
 - End every run with three headings: Blocked on me, Changed, Found when you to make code changes.
 - Don't follow the ending rule when I am just asking questions.
+- Comments only explain a non-obvious why: no section banners, no comments restating the code, no commented-out code (lint enforces the last).
 
 
 ## Frontend specific

@@ -14,7 +14,6 @@ import { CustomListConflictDialog } from '@/components/data-explorer/custom-list
 import BottomFooter from '@/components/bottom-footer';
 
 export default function Page() {
-  // `rawData` and `isLoading` come from the shared context — no local fetch needed.
   const { rawData, isLoading, loadProgress, pve } = usePcaData();
 
   const [groupBy, setGroupBy] = useQueryState("groupBy", searchParams.groupBy);

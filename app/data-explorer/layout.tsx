@@ -1,9 +1,7 @@
 import { Suspense } from 'react';
 
 
-// Added suspense fallback loading state because it stops Next from complaining
-// nuqs loading is so fast so this loading state is rarely ever seen
-// Should do more work here we start parsing lots of data in via the URL
+// Next requires a Suspense boundary around nuqs' search-param reads; the fallback is rarely seen.
 export default function DataExplorerLayout({
   children,
 }: {

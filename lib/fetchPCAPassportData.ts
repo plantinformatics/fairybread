@@ -109,7 +109,6 @@ export async function fetchPCAPassportData(
     const debug = chalk.blue;
     const overallStart = performance.now();
 
-    // Fetch PCA data
     console.log(debug('Fetching PCA passport data for:'), PCAFile, subset, noCache ? chalk.magenta('(cache disabled)') : '');
     
     const fileInfo = getDatasetInfo(PCAFile, subset);
@@ -128,8 +127,7 @@ export async function fetchPCAPassportData(
     ]);
     console.log(debug(`PCA file loaded in ${((performance.now() - pcaStart) / 1000).toFixed(2)}s`));
 
-    // Get genotype IDs. IDs Genolink can't parse would fail every page, so they're left out
-    // (they'd have no passport data to merge with anyway).
+    // IDs Genolink can't parse would fail every page; they'd have no passport data anyway.
     const { queryable: genotypeIds, unqueryable } = partitionGenolinkIds(PCAData.map((p: any) => p.IID));
     if (unqueryable.length > 0) {
       console.log(chalk.yellow(`⚠ Skipping ${unqueryable.length} non-AGG genotype IDs Genolink can't look up: ${unqueryable.join(', ')}`));
@@ -144,8 +142,7 @@ export async function fetchPCAPassportData(
     console.log(debug(`Total samples requested: ${totalSamples}`));
     console.log(debug(`Total pages to fetch: ${totalPages} (in parallel)`));
     
-    // Fetch all pages concurrently. Each page is wrapped in unstable_cache for
-    // POST request caching, unless caching is disabled for performance testing.
+    // unstable_cache because the Next fetch cache doesn't cache POST requests.
     const passportStart = performance.now();
     let pagesDone = 0;
     let received = 0;
@@ -168,7 +165,6 @@ export async function fetchPCAPassportData(
         const requestDuration = ((performance.now() - startTime) / 1000).toFixed(2);
         const pageContent = (pageData.content || []).map((item) => replaceNullsWithMissing(joinListFields(item)));
 
-        // Calculate page size in bytes
         const pageSizeBytes = new Blob([JSON.stringify(pageData)]).size;
         const pageSizeKB = (pageSizeBytes / 1024).toFixed(2);
         const pageSizeMB = (pageSizeBytes / (1024 * 1024)).toFixed(2);
@@ -191,10 +187,7 @@ export async function fetchPCAPassportData(
     onProgress({ stage: 'merging', totalSamples });
     const mergedData = mergePassportByAccession(allPassportData, PCAData);
 
-    // The "successfully fetched" log above only reflects the raw passport API
-    // response - it says nothing about whether the join (which produces what's
-    // actually returned to the frontend) succeeded. Surface that here so a broken
-    // join (e.g. an ID mismatch) can never look identical to a real success.
+    // The fetch log above says nothing about the join; log it so a broken join can't look like success.
     const missingPassportCount = totalSamples - mergedData.length;
     if (mergedData.length === 0 && allPassportData.length > 0) {
       console.log(chalk.red(`✗ Merge produced 0 items from ${allPassportData.length} fetched passport records - no passport accession matched a PCA IID. Returning empty data to caller.`));

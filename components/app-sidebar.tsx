@@ -22,8 +22,7 @@ type SidebarNavItem = {
   url: string
   icon: LucideIcon
   inactive?: boolean
-  // When false, shared params are NOT carried over to this page's URL.
-  // Defaults to true — opt out rather than opt in.
+  /** Carry shared URL params over to this page. Defaults to true. */
   preserveParams?: boolean
 }
 
@@ -56,8 +55,6 @@ export function AppSidebar() {
           <SidebarGroupContent className="flex h-full flex-col">
             <SidebarMenu>
               {items.map((item) => {
-                // Default is to preserve shared params; set preserveParams: false
-                // on items (like Settings) that don't need them.
                 const href = item.preserveParams !== false
                   ? serializeSearchParams(item.url, { file, subset, groupBy })
                   : item.url
