@@ -1,7 +1,5 @@
 'use client';
 
-import Link from "next/link";
-
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { RefreshDataCache } from "@/components/refresh-data-cache";

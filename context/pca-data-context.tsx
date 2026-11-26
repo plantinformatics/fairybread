@@ -18,10 +18,11 @@
  */
 
 import { createContext, useContext, useEffect, useState } from 'react';
-import { useQueryState, parseAsString } from 'nuqs';
+import { useQueryState } from 'nuqs';
 import posthog from 'posthog-js';
 import type { PCAPassportData } from '@/config/table-and-filter-config';
 import { ALL_ACCESSIONS_SUBSET } from '@/config/pca-location-config';
+import { searchParams } from '@/config/search-params';
 import { splitNdjsonLines, type LoadProgress, type PcaDataStreamEvent } from '@/lib/load-progress';
 
 // ---------------------------------------------------------------------------
@@ -79,17 +80,10 @@ const PcaDataContext = createContext<PcaDataContextValue | undefined>(undefined)
 export function PcaDataProvider({ children }: { children: React.ReactNode }) {
   // Keep the selected crop in the URL (?file=Wheat) so it survives page refresh
   // and can be bookmarked. nuqs keeps this in sync with React state for us.
-  // `clearOnDefault: false` keeps `file` in the URL even when it's the default
-  // ("Wheat"), so shared/bookmarked links always show which crop is selected.
-  const [file, setQueryFile] = useQueryState(
-    'file',
-    parseAsString.withDefault('Wheat').withOptions({ clearOnDefault: false }),
-  );
+  const [file, setQueryFile] = useQueryState('file', searchParams.file);
   // Keep the selected subset in the URL (?subset=All%20Accessions) alongside `file`.
-  const [subset, setQuerySubset] = useQueryState('subset', parseAsString.withDefault(ALL_ACCESSIONS_SUBSET));
-  // Dev/perf testing: ?nocache=1 on the page is forwarded to the API so every
-  // server cache layer is bypassed and load times can be measured cold.
-  const [noCache] = useQueryState('nocache', parseAsString);
+  const [subset, setQuerySubset] = useQueryState('subset', searchParams.subset);
+  const [noCache] = useQueryState('nocache', searchParams.nocache);
 
   // Wrap the nuqs setters so callers only need to pass a string — the underlying
   // nuqs setter also accepts null (to clear), but we hide that complexity here.

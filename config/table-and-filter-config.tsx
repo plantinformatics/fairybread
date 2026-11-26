@@ -45,7 +45,6 @@ import {
     Map as MapIcon,
     MapPinned,
     Sprout,
-    Tag,
     UserRound,
 } from "lucide-react"
 

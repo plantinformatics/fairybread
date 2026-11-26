@@ -21,10 +21,8 @@ export function PcaPlot({
   isLoading,
   loadProgress = null,
   groupBy, 
-  chartSelection, 
   setChartSelection, 
   tableFiltered, 
-  setTableFiltered,
   isDarkMode, 
   palette,
   pve = null,
@@ -33,10 +31,8 @@ export function PcaPlot({
   isLoading: boolean;
   loadProgress?: LoadProgress | null;
   groupBy: string;
-  chartSelection: { IID: string[] };
   setChartSelection: React.Dispatch<React.SetStateAction<{ IID: string[] }>>;
   tableFiltered: { IID: string[] };
-  setTableFiltered: React.Dispatch<React.SetStateAction<{ IID: string[] }>>;
   isDarkMode: boolean;
   palette: string;
   pve?: number[] | null;
@@ -98,11 +94,6 @@ export function PcaPlot({
       setChartSelection((prev: any) => ({ ...prev, IID: [] }));
     }
   }, [setChartSelection, groupBy]);
-
-  // used for logging please remove
-  useEffect(() => {
-    console.log("Chart Selection changed:", chartSelection);
-  }, [chartSelection]);
 
   function bindSelectionIfNeeded(graphDiv: any) {
   if (!graphDiv || typeof graphDiv.on !== 'function') return;

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { parseAsArrayOf, parseAsString, useQueryState } from 'nuqs';
+import { useQueryState } from 'nuqs';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,14 +13,17 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { useCustomList } from '@/context/custom-list-context';
+import { CUSTOM_LIST_FILTER_KEY, searchParams } from '@/config/search-params';
 
 // Reconciles a `?customList=` filter in the URL with the stored custom list,
 // once the plot data has loaded. A URL list with IDs outside the stored list
 // prompts the user to replace or keep their stored list.
 export function CustomListConflictDialog({ isPlotReady }: { isPlotReady: boolean }) {
   const { customList, setCustomList, isHydrated } = useCustomList();
-  // Same key the "Custom List" table filter writes to.
-  const [urlCustomList, setUrlCustomList] = useQueryState('customList', parseAsArrayOf(parseAsString));
+  const [urlCustomList, setUrlCustomList] = useQueryState(
+    CUSTOM_LIST_FILTER_KEY,
+    searchParams[CUSTOM_LIST_FILTER_KEY],
+  );
   const isReady = isHydrated && isPlotReady;
   const incomingList = urlCustomList ?? [];
 
