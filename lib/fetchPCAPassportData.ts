@@ -1,6 +1,6 @@
 import { unstable_cache } from 'next/cache';
 import { ALL_ACCESSIONS_SUBSET, getDatasetInfo } from '@/config/pca-location-config';
-import { passportDataSelectFields } from '@/config/table-and-filter-config';
+import { passportDataSelectFields, type PCAPassportData } from '@/config/table-and-filter-config';
 import chalk from 'chalk';
 import { parse } from "csv-parse/sync";
 
@@ -9,19 +9,24 @@ import { GENOLINK_QUERY_URL, mergePassportByAccession, partitionGenolinkIds } fr
 import type { LoadProgress } from '@/lib/load-progress'
 import { datasetCacheTags } from '@/lib/cache-tags'
 
+type PCARow = PCAPassportData['pca'];
+
+/** A passport row as Genolink returns it, before it is merged with its PCA rows. */
+type PassportRow = Omit<PCAPassportData, 'pca' | 'otherGenotypeIDs'> & { genotypeID: string | string[] };
+
 /** Fetch options for the upstream file fetches. `noCache` bypasses the Next fetch cache entirely. */
 function fileFetchOptions(noCache: boolean, tags: string[]): RequestInit {
   return noCache ? { cache: 'no-store' } : { next: { revalidate: 86400, tags } }; // one day in seconds, don't forget to align with cacheTimeoutSeconds
 }
 
-async function fetchAndParsePCAFile(PCAFileURL: string, noCache: boolean, tags: string[]): Promise<any> {
+async function fetchAndParsePCAFile(PCAFileURL: string, noCache: boolean, tags: string[]): Promise<PCARow[]> {
   const response = await fetch(PCAFileURL, fileFetchOptions(noCache, tags));
   if (!response.ok) {
     const errorText = await response.text();
     console.log(chalk.red(`Error response: ${errorText.substring(0, 200)}`));
   }
   const tsv = await response.text();
-  const data = parse(
+  const data: PCARow[] = parse(
     tsv,
     {
       columns: true,
@@ -88,7 +93,7 @@ async function fetchPassportPage(pageNum: number, ids: string[], selectFields: s
 }
 
 export type PCAPassportFetchResult = {
-  data: any[];
+  data: PCAPassportData[];
   /** Proportion of variance explained per PC (index 0 = PC1), or null if unavailable. */
   pve: number[] | null;
 };
@@ -130,7 +135,7 @@ export async function fetchPCAPassportData(
 
     // Get genotype IDs. IDs Genolink can't parse would fail every page, so they're left out
     // (they'd have no passport data to merge with anyway).
-    const { queryable: genotypeIds, unqueryable } = partitionGenolinkIds(PCAData.map((p: any) => p.IID));
+    const { queryable: genotypeIds, unqueryable } = partitionGenolinkIds(PCAData.map((p) => p.IID));
     if (unqueryable.length > 0) {
       console.log(chalk.yellow(`⚠ Skipping ${unqueryable.length} non-AGG genotype IDs Genolink can't look up: ${unqueryable.join(', ')}`));
     }
@@ -166,7 +171,7 @@ export async function fetchPCAPassportData(
             )(pageNumber, genotypeIds, selectFields, maxPassportDataLength);
 
         const requestDuration = ((performance.now() - startTime) / 1000).toFixed(2);
-        const pageContent = (pageData.content || []).map((item) => replaceNullsWithMissing(joinListFields(item)));
+        const pageContent = (pageData.content || []).map((item) => replaceNullsWithMissing(joinListFields(item)) as PassportRow);
 
         // Calculate page size in bytes
         const pageSizeBytes = new Blob([JSON.stringify(pageData)]).size;
@@ -181,7 +186,7 @@ export async function fetchPCAPassportData(
         return pageContent;
       })
     );
-    const allPassportData: any[] = pages.flat();
+    const allPassportData = pages.flat();
     console.log(debug(`Passport data fetched in ${((performance.now() - passportStart) / 1000).toFixed(2)}s`));
     
     console.log(debug(`All pages fetched successfully. Total items: ${allPassportData.length}`));
