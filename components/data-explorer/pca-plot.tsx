@@ -1,6 +1,6 @@
 import dynamic from "next/dynamic"
 import { Skeleton } from "@/components/ui/skeleton";
-import { useCallback, useEffect, useRef, useState, useMemo } from "react";
+import { useCallback, useEffect, useRef, useMemo } from "react";
 import posthog from "posthog-js";
 
 import { buildGroupedEntries, createPlotData } from "@/lib/dataProcessing";
@@ -12,7 +12,7 @@ import type { LoadProgress } from "@/lib/load-progress";
 
 const Plot = dynamic(() => import("react-plotly.js"), {
   ssr: false,
-  loading: () => <Skeleton className="w-full h-full rounded-xl" /> // unlikely to be used because data load is longer
+  loading: () => <Skeleton className="w-full h-full rounded-xl" />
 })
 
 
@@ -42,12 +42,9 @@ export function PcaPlot({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const isSelectionBoundRef = useRef<boolean>(false);
   const resizeDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [data, setData] = useState<any[]>([]);
   const { pcAxes, squarePlot } = usePreferences();
 
-  // react-plotly's `useResizeHandler` only sees window resizes, not the panel drag handle,
-  // so watch the container instead (debounced to avoid thrashing mid-drag).
+  // react-plotly's `useResizeHandler` only sees window resizes, not panel drags.
   useEffect(() => {
     const container = containerRef.current;
     if (!container || typeof ResizeObserver === "undefined") return;
@@ -66,15 +63,11 @@ export function PcaPlot({
     };
   }, []);
 
-  useEffect(()=>{
-    setLoading(true);
+  const data = useMemo(() => {
     const groupedEntries = buildGroupedEntries(rawData, groupBy, tableFiltered.IID);
-    setData(createPlotData(groupedEntries, groupBy, groupByLabel(groupBy), pcAxes));
-    setLoading(false);
-  }, [rawData, groupBy, tableFiltered, pcAxes])
+    return createPlotData(groupedEntries, groupBy, groupByLabel(groupBy), pcAxes);
+  }, [rawData, groupBy, tableFiltered, pcAxes]);
 
-
-  // Used because dark mode needs to be an explicit theme change for plotly
   const dynamicLayout = useMemo(() => {
     return buildChartLayout(isDarkMode, palette, pcAxes, pve, squarePlot);
   }, [palette, isDarkMode, pcAxes, pve, squarePlot]);
@@ -104,11 +97,9 @@ export function PcaPlot({
   isSelectionBoundRef.current = false;
   bindSelectionIfNeeded(graphDiv);
   }    
-  const isPlotLoading = isLoading || loading;
-
   return (
       <div ref={containerRef} className="relative w-full h-full min-w-0 overflow-hidden box-border">
-        {isPlotLoading && <LoadingOverlay message="Loading plot..." progress={isLoading ? loadProgress : null} />}
+        {isLoading && <LoadingOverlay message="Loading plot..." progress={loadProgress} />}
         <Plot
           data={data}
           layout={dynamicLayout}

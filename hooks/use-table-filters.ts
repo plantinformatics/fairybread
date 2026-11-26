@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useEffectEvent, useMemo, useState } from "react"
 import { useQueryStates } from "nuqs"
 
 import type { Filter, FilterFieldConfig } from "@/components/reui/filters"
@@ -15,12 +15,8 @@ interface UseTableFiltersOptions<TRow extends Record<string, unknown>> {
 const defaultOperatorFor = (field: FilterFieldConfig | undefined): string =>
   field?.defaultOperator || (field?.type === "multiselect" ? "is_any_of" : "is")
 
-// Rebuilds the `Filter[]` shape the UI expects from the raw `field -> values`
-// map nuqs restores from the URL. Operators aren't persisted in the URL (only
-// values are), so restored filters fall back to each field's default operator.
-// IDs are derived from the field key rather than `createFilter`'s time/random
-// id, so the same URL always produces the same id on both the server render
-// pass and the client hydration pass.
+// The URL only stores values, so restored filters use each field's default operator.
+// IDs come from the field key (not `createFilter`'s random id) so server and client renders match.
 const filtersFromQueryStates = (
   queryStates: Record<string, string[] | null>,
   fieldsMap: Record<string, FilterFieldConfig>
@@ -53,7 +49,6 @@ const toQueryStates = (
   return next
 }
 
-// Compares two query-state maps, treating `[]` and `null` as equal.
 const sameQueryStates = (
   a: Record<string, string[] | null>,
   b: Record<string, string[] | null>
@@ -96,26 +91,14 @@ export function useTableFilters<TRow extends Record<string, unknown>>({
     return map
   }, [fields])
 
-  // Restore any filters already present in the URL (e.g. a shared link, or a
-  // refresh) on first render, instead of only reflecting them in the URL.
   const [filters, setFilters] = useState<Filter[]>(() =>
     filtersFromQueryStates(queryStates, fieldsMap)
   )
 
-  // Debounced copy used for expensive work (filtered rows → plot / colour maps).
-  // `filters` stays immediate so the controlled text inputs remain responsive.
+  // Debounced so the controlled filter inputs stay responsive while the plot and colour maps catch up.
   const [appliedFilters, setAppliedFilters] = useState<Filter[]>(filters)
-  const skipNextApplyRef = useRef(false)
 
   useEffect(() => {
-    // clearFilters applies synchronously and sets this so we don't schedule a
-    // second (debounced) write of the same empty state.
-    if (skipNextApplyRef.current) {
-      skipNextApplyRef.current = false
-      return
-    }
-
-    // Same reference ⇒ nothing to apply (initial mount, or just-applied update).
     if (filters === appliedFilters) return
 
     const timer = setTimeout(() => {
@@ -126,29 +109,21 @@ export function useTableFilters<TRow extends Record<string, unknown>>({
     return () => clearTimeout(timer)
   }, [filters, appliedFilters, debounceMs, queryStateKeys, setQueryStates])
 
-  // Adopt URL changes made outside this hook (e.g. the custom list conflict
-  // dialog, or browser back/forward). Our own debounced writes always match
-  // `appliedFilters`, so they're skipped. Read via a ref so this only reacts to
-  // the URL changing, not to `appliedFilters` changing ahead of it.
-  const appliedFiltersRef = useRef(appliedFilters)
-  useEffect(() => {
-    appliedFiltersRef.current = appliedFilters
-  }, [appliedFilters])
+  const adoptUrlChangeMadeElsewhere = useEffectEvent(
+    (urlStates: Record<string, string[] | null>) => {
+      if (sameQueryStates(toQueryStates(appliedFilters, queryStateKeys), urlStates)) return
+      const next = filtersFromQueryStates(urlStates, fieldsMap)
+      setFilters(next)
+      setAppliedFilters(next)
+    }
+  )
 
   useEffect(() => {
-    const current = toQueryStates(appliedFiltersRef.current, queryStateKeys)
-    if (sameQueryStates(current, queryStates)) return
-    const next = filtersFromQueryStates(queryStates, fieldsMap)
-    setFilters(next)
-    setAppliedFilters(next)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    adoptUrlChangeMadeElsewhere(queryStates)
   }, [queryStates])
 
   const filteredData = useMemo(() => {
-    // Remap filter.field to the field's dataKey (if provided) so the engine
-    // reads from the correct row attribute. This lets a field have a logical
-    // identity (e.g. "customList") that's distinct from the underlying data
-    // key it filters on (e.g. "genotypeID").
+    // A field's dataKey is the row attribute it filters on, e.g. customList filters genotypeID.
     const resolvedFilters = appliedFilters.map((filter) => {
       const dataKey = fieldsMap[filter.field]?.dataKey
       return dataKey ? { ...filter, field: dataKey } : filter
@@ -165,10 +140,9 @@ export function useTableFilters<TRow extends Record<string, unknown>>({
   )
 
   const clearFilters = useCallback(() => {
-    // Apply immediately so clear doesn't wait for the debounce window.
-    skipNextApplyRef.current = true
-    setFilters([])
-    setAppliedFilters([])
+    const noFilters: Filter[] = []
+    setFilters(noFilters)
+    setAppliedFilters(noFilters)
     onFiltersChange?.([])
     setQueryStates(toQueryStates([], queryStateKeys))
   }, [onFiltersChange, queryStateKeys, setQueryStates])

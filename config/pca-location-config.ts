@@ -99,21 +99,12 @@ export const PCAFileInfo = new Map<string, PCACropConfig>([
     }],
 ]);
 
-/**
- * All selectable subset names for a crop, always starting with `ALL_ACCESSIONS_SUBSET`
- * followed by any configured subsets (in declaration order).
- */
 export function getSubsetNames(crop: string): string[] {
     const cropConfig = PCAFileInfo.get(crop);
     return [ALL_ACCESSIONS_SUBSET, ...Object.keys(cropConfig?.subsets ?? {})];
 }
 
-/**
- * Resolves the fileUrl/citations/pveFileUrl to use for a given crop + subset.
- * Falls back to the crop's `allAccessions` entry if the crop is unknown or doesn't
- * have the requested subset (e.g. after switching crops), and subsets inherit
- * citations from `allAccessions` when not explicitly overridden.
- */
+/** An unknown subset (e.g. after switching crops) falls back to the crop's `allAccessions` entry. */
 export function getDatasetInfo(crop: string, subset: string): PCADatasetInfo | undefined {
     const cropConfig = PCAFileInfo.get(crop);
     if (!cropConfig) return undefined;

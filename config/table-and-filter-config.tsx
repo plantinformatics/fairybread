@@ -96,10 +96,6 @@ function getColumnDotColor(
     return table.options.meta?.columnColorMaps?.get(accessorKey)?.get(genotypeID)
 }
 
-/**
- * Header that bolds when this column is the active group-by, or when a table
- * filter is applied on this column.
- */
 const renderActiveColumnHeader = (accessorKey: string, title: string) =>
     ({ column, table }: HeaderContext<PCAPassportData, unknown>) => {
         const isActive = isColumnHighlighted(table, accessorKey)
@@ -114,12 +110,7 @@ const renderActiveColumnHeader = (accessorKey: string, title: string) =>
         )
     }
 
-/**
- * Cell prefixed with a colour dot when this column is highlighted (active
- * group-by or filtered) — colour matches the group's palette assignment.
- * `min-w-0 break-words` keeps long values (e.g. accession names) wrapping
- * inside the fixed-width cell instead of overflowing.
- */
+/** `min-w-0 break-words` wraps long values (e.g. accession names) inside the fixed-width cell. */
 const renderActiveColumnCell = (accessorKey: string) =>
     ({ row, table, getValue }: CellContext<PCAPassportData, unknown>) => {
         const color = getColumnDotColor(table, accessorKey, row.original.genotypeID)
