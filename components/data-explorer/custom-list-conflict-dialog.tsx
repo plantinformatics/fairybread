@@ -43,7 +43,6 @@ export function CustomListConflictDialog({ isPlotReady }: { isPlotReady: boolean
 
   const replaceWithIncoming = () => setCustomList(incomingList);
 
-  // Point the URL filter at the stored list so the plot matches it.
   const keepStored = () => {
     setUrlCustomList(customList, { history: 'replace' });
   };
