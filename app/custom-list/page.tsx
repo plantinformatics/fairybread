@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import type { PCAPassportData } from '@/config/table-and-filter-config';
 import { PCAFileInfo, getDatasetInfo } from '@/config/pca-location-config';
 import { usePcaData } from '@/context/pca-data-context';
@@ -26,27 +26,22 @@ import {
 } from 'lucide-react';
 import { parseInput, matchTerms } from '@/lib/customListParseMatch'
 import { useCustomList } from '@/context/custom-list-context';
+import { usePersistedState } from '@/hooks/use-persisted-state';
+import { stringCodec } from '@/lib/storage-codecs';
 import posthog from 'posthog-js';
+
+const CUSTOM_LIST_TEXT_STORAGE_KEY = 'pca-custom-list-text';
 
 export default function CustomListPage() {
   const cropOptions = Array.from(PCAFileInfo.keys());
 
-  const CUSTOM_LIST_TEXT_STORAGE_KEY = "pca-custom-list-text"
-
   const { file, setFile, subset, rawData, isLoading } = usePcaData();
   const { customList, setCustomList} = useCustomList();
 
-  const [inputText, setInputText] = useState<string>('')
+  const [inputText, setInputText] = usePersistedState(CUSTOM_LIST_TEXT_STORAGE_KEY, '', stringCodec);
   const [matchedRows, setMatchedRows] = useState<PCAPassportData[]>([]);
   const [unmatchedTerms, setUnmatchedTerms] = useState<string[]>([]);
   const [hasParsed, setHasParsed] = useState(false);
-
-  useEffect(()=>{
-    const savedText = window.localStorage.getItem(CUSTOM_LIST_TEXT_STORAGE_KEY);
-    if (savedText) {
-      setInputText(savedText);
-    }
-  }, [])
 
   const handleParse = () => {
     const terms = parseInput(inputText);
@@ -144,10 +139,7 @@ export default function CustomListPage() {
                   'Paste genotype IDs here\u2026\n\nOne per line, or CSV/TSV (all fields are used).\nExample:\n  WAWB0001\n  WAWB0002'
                 }
                 value={inputText}
-                onChange={(e) => 
-                  {setInputText(e.target.value);
-                   window.localStorage.setItem(CUSTOM_LIST_TEXT_STORAGE_KEY, e.target.value);
-                  }}
+                onChange={(e) => setInputText(e.target.value)}
               />
               <div className="mt-3 flex gap-2">
                 <Button

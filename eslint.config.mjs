@@ -57,6 +57,19 @@ const eslintConfig = defineConfig([
     rules: { "no-restricted-imports": "off" },
   },
   {
+    ignores: [...vendored, "hooks/use-persisted-state.ts"],
+    rules: {
+      "no-restricted-globals": [
+        "error",
+        { name: "localStorage", message: "Use usePersistedState from hooks/use-persisted-state.ts." },
+      ],
+      "no-restricted-properties": [
+        "error",
+        { object: "window", property: "localStorage", message: "Use usePersistedState from hooks/use-persisted-state.ts." },
+      ],
+    },
+  },
+  {
     files: ["components/**", "context/**", "hooks/**", "app/**"],
     ignores: ["app/api/**", ...vendored],
     rules: {

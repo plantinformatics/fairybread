@@ -1,55 +1,36 @@
 "use client"
 
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext } from 'react';
+import { useHydrated, usePersistedState } from '@/hooks/use-persisted-state';
+import { jsonCodec } from '@/lib/storage-codecs';
 import { isStringArray } from '@/lib/type-guards';
 
-
-const PALETTE_STORAGE_KEY = 'pca-custom-list-ids';
-
+const CUSTOM_LIST_STORAGE_KEY = 'pca-custom-list-ids';
+const EMPTY_LIST: string[] = [];
+const customListCodec = jsonCodec((json) => (isStringArray(json) ? json : undefined));
 
 interface CustomListContextValue {
     customList: string[];
     setCustomList: (f: string[]) => void;
-    /** False until the stored list has been read from localStorage. */
+    /** False until the stored list has been read, so "not read yet" isn't mistaken for an empty list. */
     isHydrated: boolean;
 }
 
-const CostomListContext = createContext<CustomListContextValue | undefined>(undefined);
+const CustomListContext = createContext<CustomListContextValue | undefined>(undefined);
 
 export function CustomListProvider({ children }: { children: React.ReactNode }) {
+    const [customList, setCustomList] = usePersistedState(CUSTOM_LIST_STORAGE_KEY, EMPTY_LIST, customListCodec);
+    const isHydrated = useHydrated();
 
-    const [customList, setCustomList] = useState<string[]>([])
-    const [isHydrated, setIsHydrated] = useState<boolean>(false);
-
-    useEffect(() => {
-        const savedCustomList = window.localStorage.getItem(PALETTE_STORAGE_KEY);
-        if (savedCustomList) {
-            try {
-                const parsedCustomList: unknown = JSON.parse(savedCustomList)
-                if (isStringArray(parsedCustomList)) {
-                    setCustomList(parsedCustomList);
-                }
-            } catch {
-                throw new Error ("Error in parsing previously stored customList")
-            }
-        }
-        setIsHydrated(true);
-    }, []);
-
-    useEffect(() => {
-        if (!isHydrated) return;
-        window.localStorage.setItem(PALETTE_STORAGE_KEY, JSON.stringify(customList));
-      }, [isHydrated, customList]);
-
-    return <CostomListContext.Provider value={ {customList, setCustomList, isHydrated} }>
+    return <CustomListContext.Provider value={ {customList, setCustomList, isHydrated} }>
         { children }
-    </CostomListContext.Provider>
+    </CustomListContext.Provider>
 }
 
 export function useCustomList(): CustomListContextValue {
-    const ctx = useContext(CostomListContext);
+    const ctx = useContext(CustomListContext);
     if (ctx === undefined) {
-        throw new Error('usePreferences must be used within a <CustomListProvider>');
+        throw new Error('useCustomList must be used within a <CustomListProvider>');
       }
       return ctx;
 }

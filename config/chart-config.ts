@@ -1,4 +1,4 @@
-import type { PcAxes, PcAxis } from "@/context/preferences-context";
+import type { PcAxes, PcAxis } from "@/lib/pc-axes";
 
 /** e.g. "PC1" or "PC1 (14.7%)" when PVE is available. */
 export function pcAxisTitle(pc: PcAxis, pve?: number[] | null): string {

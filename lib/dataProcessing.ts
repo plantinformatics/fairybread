@@ -1,4 +1,4 @@
-import type { PcAxes } from '@/context/preferences-context';
+import type { PcAxes } from '@/lib/pc-axes';
 import { chartColourPalettes } from '@/config/chart-config';
 
 /** Group-by mode that splits rows into `MATCH_GROUP` / `NOT_MATCH_GROUP` by the table filters. */
