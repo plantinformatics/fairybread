@@ -33,7 +33,6 @@ import posthog from 'posthog-js';
 export default function CustomListPage() {
   const cropOptions = Array.from(PCAFileInfo.keys());
 
-  const DEBOUNCE_MS = 250;
   const CUSTOM_LIST_TEXT_STORAGE_KEY = "pca-custom-list-text"
 
   // `file`, `rawData`, and `isLoading` all come from the shared context —
@@ -73,7 +72,6 @@ export default function CustomListPage() {
     setMatchedRows(matched)
     setUnmatchedTerms(unmatched)
     setHasParsed(true)
-    // TODO: Update matchedRows, unmatchedTerms, and set hasParsed to true.
   };
 
   const handleReset = () => {

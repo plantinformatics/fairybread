@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { parseAsArrayOf, parseAsString, useQueryStates } from "nuqs"
+import { useQueryStates } from "nuqs"
 
 import type { Filter, FilterFieldConfig } from "@/components/reui/filters"
+import { filterValuesParser } from "@/config/search-params"
 import { applyFilters } from "@/lib/filter-engine"
 
 interface UseTableFiltersOptions<TRow extends Record<string, unknown>> {
@@ -74,7 +75,7 @@ export function useTableFilters<TRow extends Record<string, unknown>>({
       fields
         .map((field) => field.key)
         .filter((key): key is string => Boolean(key))
-        .map((key) => [key, parseAsArrayOf(parseAsString)])
+        .map((key) => [key, filterValuesParser])
     )
   }, [fields])
 

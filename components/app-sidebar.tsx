@@ -1,20 +1,8 @@
 "use client"
 
 import Link from "next/link"
-import { createSerializer, parseAsString, useQueryState } from "nuqs"
-import {
-  Calendar,
-  CheckSquare,
-  GalleryVerticalEnd,
-  Grid2x2,
-  Group,
-  Home,
-  Inbox,
-  ListFilter,
-  PanelRight,
-  Search,
-  Settings,
-} from "lucide-react"
+import { useQueryState } from "nuqs"
+import { Home, ListFilter, Settings } from "lucide-react"
 
 import {
   Sidebar,
@@ -27,10 +15,7 @@ import {
 } from "@/components/ui/sidebar"
 import type { LucideIcon } from "lucide-react"
 import { usePcaData } from "@/context/pca-data-context"
-
-// Serializer for all shared URL params. Add new ones here and they'll
-// automatically be preserved on any navigation item that has preserveParams: true.
-const serialize = createSerializer({ file: parseAsString, subset: parseAsString, groupBy: parseAsString })
+import { searchParams, serializeSearchParams } from "@/config/search-params"
 
 type SidebarNavItem = {
   title: string
@@ -48,49 +33,6 @@ const items: SidebarNavItem[] = [
     url: "/data-explorer",
     icon: Home,
   },
-  // {
-  //   title: "Button Variants",
-  //   url: "/button-variants",
-  //   icon: Grid2x2,
-  // },
-  // {
-  //   title: "Input Group",
-  //   url: "/input-group",
-  //   icon: Group,
-  // },
-  // {
-  //   title: "Sheet",
-  //   url: "/sheet",
-  //   icon: PanelRight,
-  // },
-  // {
-  //   title: "Skeleton Variants",
-  //   url: "/skeleton-variants",
-  //   icon: GalleryVerticalEnd,
-  // },
-  // {
-  //   title: "Checkbox Demo",
-  //   url: "/checkbox-demo",
-  //   icon: CheckSquare,
-  // },
-  // {
-  //   title: "Inbox",
-  //   url: "#",
-  //   icon: Inbox,
-  //   inactive: true,
-  // },
-  // {
-  //   title: "Calendar",
-  //   url: "#",
-  //   icon: Calendar,
-  //   inactive: true,
-  // },
-  // {
-  //   title: "Search",
-  //   url: "#",
-  //   icon: Search,
-  //   inactive: true,
-  // },
   {
     title: "Custom List",
     url: "/custom-list",
@@ -105,7 +47,7 @@ const items: SidebarNavItem[] = [
 
 export function AppSidebar() {
   const { file, subset } = usePcaData()
-  const [groupBy] = useQueryState("groupBy", parseAsString.withDefault("subRegion"))
+  const [groupBy] = useQueryState("groupBy", searchParams.groupBy)
 
   return (
     <Sidebar variant="sidebar" collapsible='icon'>
@@ -117,7 +59,7 @@ export function AppSidebar() {
                 // Default is to preserve shared params; set preserveParams: false
                 // on items (like Settings) that don't need them.
                 const href = item.preserveParams !== false
-                  ? serialize(item.url, { file, subset, groupBy })
+                  ? serializeSearchParams(item.url, { file, subset, groupBy })
                   : item.url
 
                 return (

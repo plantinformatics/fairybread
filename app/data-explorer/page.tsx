@@ -1,7 +1,8 @@
 'use client';
 
-import { useQueryState, parseAsString } from 'nuqs';
+import { useQueryState } from 'nuqs';
 import { useState } from 'react';
+import { searchParams } from '@/config/search-params';
 import { useTheme } from '@/context/theme-context';
 import { usePreferences } from '@/context/preferences-context';
 import { usePcaData } from '@/context/pca-data-context';
@@ -16,7 +17,7 @@ export default function Page() {
   // `rawData` and `isLoading` come from the shared context — no local fetch needed.
   const { rawData, isLoading, loadProgress, pve } = usePcaData();
 
-  const [groupBy, setGroupBy] = useQueryState("groupBy", parseAsString.withDefault("subRegion"));
+  const [groupBy, setGroupBy] = useQueryState("groupBy", searchParams.groupBy);
   const { palette, resizablePlot } = usePreferences();
   const { isDark: isDarkMode } = useTheme();
 
@@ -36,10 +37,8 @@ export default function Page() {
         isLoading={isLoading}
         loadProgress={loadProgress}
         groupBy={groupBy}
-        chartSelection={chartSelection}
         setChartSelection={setChartSelection}
         tableFiltered={tableFiltered}
-        setTableFiltered={setTableFiltered}
         isDarkMode={isDarkMode}
         palette={palette}
         pve={pve}
@@ -51,7 +50,6 @@ export default function Page() {
       groupBy={groupBy}
       setGroupBy={setGroupBy}
       chartSelection={chartSelection}
-      setChartSelection={setChartSelection}
       tableFiltered={tableFiltered}
       setTableFiltered={setTableFiltered} 
       />

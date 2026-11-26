@@ -19,6 +19,7 @@ import { columns, fields, PCAPassportData } from '@/config/table-and-filter-conf
 import { useTableFilters } from '@/hooks/use-table-filters';
 import { PcaTableToolbar } from '@/components/data-explorer/pca-table-toolbar';
 import { useCustomList } from '@/context/custom-list-context';
+import { CUSTOM_LIST_FILTER_KEY } from '@/config/search-params';
 import { usePreferences } from '@/context/preferences-context';
 import { buildGroupedEntries, buildRowColorMap } from '@/lib/dataProcessing';
 import type { FilterFieldConfig } from '@/components/reui/filters';
@@ -28,7 +29,6 @@ export function PcaTable({
   rawData,
   isLoading,
   chartSelection, 
-  setChartSelection, 
   tableFiltered, 
   setTableFiltered,
   groupBy,
@@ -37,7 +37,6 @@ export function PcaTable({
   rawData: PCAPassportData[],
   isLoading: boolean;
   chartSelection: { IID: string[] };
-  setChartSelection: React.Dispatch<React.SetStateAction<{ IID: string[] }>>;
   tableFiltered: { IID: string[] };
   setTableFiltered: React.Dispatch<React.SetStateAction<{ IID: string[] }>>;
   groupBy: string;
@@ -61,7 +60,7 @@ export function PcaTable({
   // (greyed out in the add-filter menu) whenever the list is empty.
   const fieldsWithCustomList = useMemo<FilterFieldConfig[]>(() => {
     const customListField: FilterFieldConfig = {
-      key: "customList",
+      key: CUSTOM_LIST_FILTER_KEY,
       label: "Custom List",
       icon: <ListChecks className="size-3.5" />,
       type: "multiselect",
@@ -97,7 +96,7 @@ export function PcaTable({
     for (const filter of appliedFilters) {
       const hasValue = (filter.values ?? []).some((value) => String(value).trim() !== "");
       if (!hasValue) continue;
-      fields.push(filter.field === "customList" ? "genotypeID" : filter.field);
+      fields.push(filter.field === CUSTOM_LIST_FILTER_KEY ? "genotypeID" : filter.field);
     }
     return fields;
   }, [appliedFilters]);
@@ -132,10 +131,6 @@ export function PcaTable({
     setTableData(plotSelectedData);
   }, [chartSelection, rawData]);
 
-  // logging for selection remove later
-  useEffect(() => {
-    console.log("Table data has changed:", tableData)
-  }, [tableData])
   // Auto-switch groupBy once applied filters settle (same debounce as the plot).
   const hasTextFilterInput = useMemo(() => {
     return appliedFilters.some((filter) =>
@@ -167,11 +162,6 @@ export function PcaTable({
     const byGenotypeID = { IID: filteredData.map((p:any) => p.genotypeID)}
     setTableFiltered(byGenotypeID)
   }, [filteredData])
-
-  // logging please remove later
-  useEffect(() => {
-    console.log("TableFiltered has changed", tableFiltered)
-  }, [tableFiltered])
 
   const table = useReactTable({
     columns,
