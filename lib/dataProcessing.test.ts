@@ -5,14 +5,19 @@ import {
   createPlotData,
   joinListFields,
   replaceNullsWithMissing,
+  type GroupedEntry,
 } from "@/lib/dataProcessing"
+import type { PCAPassportData } from "@/config/table-and-filter-config"
 
-const row = (genotypeID: string, country: string) => ({
-  genotypeID,
-  country,
-  accessionName: `acc-${genotypeID}`,
-  pca: { IID: genotypeID, PC1: 1, PC2: 2, PC3: 3 },
-})
+// Partial fixture: only the fields grouping and plotting read. `country` is a
+// stand-in group-by column, and numeric PCs check values pass through untouched.
+const row = (genotypeID: string, country: string) =>
+  ({
+    genotypeID,
+    country,
+    accessionName: `acc-${genotypeID}`,
+    pca: { IID: genotypeID, PC1: 1, PC2: 2, PC3: 3 },
+  }) as unknown as PCAPassportData
 
 describe("replaceNullsWithMissing", () => {
   test("replaces nulls at any depth and keeps other values", () => {
@@ -78,7 +83,7 @@ describe("buildRowColorMap", () => {
 })
 
 describe("createPlotData", () => {
-  const groups = [["AUS", [row("1", "AUS")]]]
+  const groups: GroupedEntry[] = [["AUS", [row("1", "AUS")]]]
 
   test("builds a 2D scattergl trace when no z axis is set", () => {
     const [trace] = createPlotData(groups, "country", { x: "PC1", y: "PC2", z: null })

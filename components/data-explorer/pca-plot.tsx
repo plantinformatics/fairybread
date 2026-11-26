@@ -1,6 +1,7 @@
 import dynamic from "next/dynamic"
 import { Skeleton } from "@/components/ui/skeleton";
-import { useCallback, useEffect, useRef, useState, useMemo } from "react";
+import { useCallback, useEffect, useRef, useMemo } from "react";
+import type { PlotSelectionEvent } from "plotly.js";
 import posthog from "posthog-js";
 
 import { buildGroupedEntries, createPlotData } from "@/lib/dataProcessing";
@@ -38,12 +39,8 @@ export function PcaPlot({
   pve?: number[] | null;
 }) 
 {
-  const graphDivRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const isSelectionBoundRef = useRef<boolean>(false);
   const resizeDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [data, setData] = useState<any[]>([]);
   const { pcAxes, squarePlot } = usePreferences();
 
   // react-plotly.js's `useResizeHandler` only reacts to `window` resize
@@ -69,12 +66,10 @@ export function PcaPlot({
     };
   }, []);
 
-  useEffect(()=>{
-    setLoading(true);
-    const groupedEntries = buildGroupedEntries(rawData, groupBy, tableFiltered.IID);
-    setData(createPlotData(groupedEntries, groupBy, pcAxes));
-    setLoading(false);
-  }, [rawData, groupBy, tableFiltered, pcAxes])
+  const data = useMemo(
+    () => createPlotData(buildGroupedEntries(rawData, groupBy, tableFiltered.IID), groupBy, pcAxes),
+    [rawData, groupBy, tableFiltered, pcAxes],
+  );
 
 
   // Used because dark mode needs to be an explicit theme change for plotly
@@ -82,32 +77,20 @@ export function PcaPlot({
     return buildChartLayout(isDarkMode, palette, pcAxes, pve, squarePlot);
   }, [palette, isDarkMode, pcAxes, pve, squarePlot]);
 
-  const handleSelected = useCallback((eventData: any) => {
+  const handleSelected = useCallback((eventData: Readonly<PlotSelectionEvent>) => {
     if (eventData?.points?.length > 0) {
-      const selectedIDs: string[] = eventData.points.map((point: any) => point.text);
+      const selectedIDs = eventData.points.map((point) => point.text);
       posthog.capture('plot_selection_made', {
         selected_count: selectedIDs.length,
         group_by: groupBy,
       });
-      setChartSelection((prev: any) => ({ ...prev, IID: selectedIDs }));
+      setChartSelection((prev) => ({ ...prev, IID: selectedIDs }));
     } else {
-      setChartSelection((prev: any) => ({ ...prev, IID: [] }));
+      setChartSelection((prev) => ({ ...prev, IID: [] }));
     }
   }, [setChartSelection, groupBy]);
 
-  function bindSelectionIfNeeded(graphDiv: any) {
-  if (!graphDiv || typeof graphDiv.on !== 'function') return;
-  if (isSelectionBoundRef.current) return;
-  graphDiv.on('plotly_selected', handleSelected);
-  isSelectionBoundRef.current = true;
-  }
-
-  const ensureGraphDivisBound = (figure: any, graphDiv: any) => {
-  graphDivRef.current = graphDiv;
-  isSelectionBoundRef.current = false;
-  bindSelectionIfNeeded(graphDiv);
-  }    
-  const isPlotLoading = isLoading || loading;
+  const isPlotLoading = isLoading;
 
   return (
       <div ref={containerRef} className="relative w-full h-full min-w-0 overflow-hidden box-border">
@@ -118,7 +101,7 @@ export function PcaPlot({
           config={chartConfig}
           useResizeHandler={true}
           style={{ width: "100%", height: "100%" }}
-          onInitialized={ensureGraphDivisBound}
+          onSelected={handleSelected}
         />
     </div>
   )

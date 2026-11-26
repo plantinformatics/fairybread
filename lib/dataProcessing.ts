@@ -1,15 +1,32 @@
+import type { PlotData } from 'plotly.js';
 import type { PcAxes } from '@/context/preferences-context';
+import type { PCAPassportData } from '@/config/table-and-filter-config';
 import { chartColourPalettes } from '@/config/chart-config';
 
-export function extractSortAndFilter(PCAPassportData: any[], groupingValue: string, numberOfEntries: number) {
-    const groupedPCAPassport = Object.groupBy(PCAPassportData, (p: any) => p[groupingValue]);
+export type GroupedEntry = [string, PCAPassportData[]];
+
+/** Reads a passport field by its (dynamic) column id, e.g. the active group-by. */
+function fieldValue(p: PCAPassportData, field: string): unknown {
+  return (p as Record<string, unknown>)[field];
+}
+
+function toEntries(grouped: Partial<Record<string, PCAPassportData[]>>): GroupedEntry[] {
+  return Object.entries(grouped).map(([key, items]): GroupedEntry => [key, items ?? []]);
+}
+
+export function extractSortAndFilter(
+  PCAPassportData: PCAPassportData[],
+  groupingValue: string,
+  numberOfEntries: number,
+): GroupedEntry[] {
+    const groupedPCAPassport = Object.groupBy(PCAPassportData, (p) => String(fieldValue(p, groupingValue)));
     // extract null entries
     const missing = groupedPCAPassport["N/A"] || [];
     delete groupedPCAPassport["N/A"];
-    const sorted = Object.entries(groupedPCAPassport).sort((a: any, b: any) => b[1].length - a[1].length);
+    const sorted = toEntries(groupedPCAPassport).sort((a, b) => b[1].length - a[1].length);
     // extract only the largest groups and assign the rest to the "Other" group
     const top = sorted.slice(0, numberOfEntries);
-    const rest = sorted.slice(numberOfEntries).flatMap(([, arr]: any) => arr);
+    const rest = sorted.slice(numberOfEntries).flatMap(([, arr]) => arr);
     // rebuild the array with the "Other" group and the null entries at the end
     return [...top, ["Other", rest], ["N/A", missing]];
   }
@@ -20,20 +37,20 @@ export function extractSortAndFilter(PCAPassportData: any[], groupingValue: stri
  * with the plot's legend/colour order.
  */
 export function buildGroupedEntries(
-  rawData: any[],
+  rawData: PCAPassportData[],
   groupingValue: string,
   matchedGenotypeIDs: string[] = [],
   numberOfEntries: number = 15,
-): [string, any[]][] {
+): GroupedEntry[] {
   if (groupingValue === "textFilter") {
     const matchedSet = new Set(matchedGenotypeIDs);
     const groupedData = Object.groupBy(
       rawData,
-      (item: any) => (matchedSet.has(item.genotypeID) ? "Match" : "Not Match"),
+      (item) => (matchedSet.has(item.genotypeID) ? "Match" : "Not Match"),
     );
-    return Object.entries(groupedData) as [string, any[]][];
+    return toEntries(groupedData);
   }
-  return extractSortAndFilter(rawData, groupingValue, numberOfEntries) as [string, any[]][];
+  return extractSortAndFilter(rawData, groupingValue, numberOfEntries);
 }
 
 /**
@@ -42,7 +59,7 @@ export function buildGroupedEntries(
  * colour swatches next to values in the active group-by / filtered column.
  */
 export function buildRowColorMap(
-  groupedEntries: [string, any[]][],
+  groupedEntries: GroupedEntry[],
   palette: string,
 ): Map<string, string> {
   const colors = chartColourPalettes.get(palette) || [];
@@ -51,10 +68,10 @@ export function buildRowColorMap(
 
   // Mirrors the "Selected" group ordering used when building plot traces.
   const entries = [...groupedEntries].sort(
-    ([a]: any, [b]: any) => Number(a === "Selected") - Number(b === "Selected"),
+    ([a], [b]) => Number(a === "Selected") - Number(b === "Selected"),
   );
 
-  entries.forEach(([, items]: any, index) => {
+  entries.forEach(([, items], index) => {
     const color = colors[index % colors.length];
     for (const item of items) {
       colorMap.set(item.genotypeID, color);
@@ -65,32 +82,32 @@ export function buildRowColorMap(
 }
 
 export function createPlotData(
-  groupedData: any[],
+  groupedData: GroupedEntry[],
   groupingValue: string,
   pcAxes: PcAxes,
-) {
+): Partial<PlotData>[] {
     const { x: pcx, y: pcy, z: pcz } = pcAxes;
     // This is the only way to ensure that the Selected group is drawn on the top
     // Z order manipulation is only supported in scatter not scattergl type
     // See https://github.com/plotly/plotly.js/pull/6918
     const entries = [...groupedData].sort(
-      ([a]: any, [b]: any) => Number(a === "Match") - Number(b === "Selected")
+      ([a], [b]) => Number(a === "Match") - Number(b === "Selected")
     )
-    return entries.map(([key, value]: any) => {
+    return entries.map(([key, value]) => {
       return {
-        x: value.map((p: any) => p.pca[pcx]),
-        y: value.map((p: any) => p.pca[pcy]),
-        ...(pcz && { z: value.map((p: any) => p.pca[pcz]) }),
-        text: value.map((p: any) => p.pca.IID),
-        customdata: value.map((p: any) => [
+        x: value.map((p) => p.pca[pcx]),
+        y: value.map((p) => p.pca[pcy]),
+        ...(pcz && { z: value.map((p) => p.pca[pcz]) }),
+        text: value.map((p) => p.pca.IID),
+        customdata: value.map((p) => [
           p.accessionName,
-          p[groupingValue] ?? "N/A",
+          String(fieldValue(p, groupingValue) ?? "N/A"),
           p.otherGenotypeIDs ? `<b>Also genotyped as:</b> ${p.otherGenotypeIDs.join(", ")}<br>` : "",
         ]),
         name: (key.length < 20 ? key : key.substring(0, 17) + "...") + " (" + value.length + ")",
         opacity: key === "Match" ? 0.8 : 0.5,
-        mode: "markers",
-        type: pcz ? "scatter3d" : "scattergl",
+        mode: "markers" as const,
+        type: pcz ? "scatter3d" as const : "scattergl" as const,
         marker: pcz ? { size: 3 } : { size: 5 },
         hovertemplate:
         "<u><b>%{text}</b></u><br>" +
