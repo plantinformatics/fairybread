@@ -3,14 +3,11 @@ import { chartColourPalettes } from '@/config/chart-config';
 
 export function extractSortAndFilter(PCAPassportData: any[], groupingValue: string, numberOfEntries: number) {
     const groupedPCAPassport = Object.groupBy(PCAPassportData, (p: any) => p[groupingValue]);
-    // extract null entries
     const missing = groupedPCAPassport["N/A"] || [];
     delete groupedPCAPassport["N/A"];
     const sorted = Object.entries(groupedPCAPassport).sort((a: any, b: any) => b[1].length - a[1].length);
-    // extract only the largest groups and assign the rest to the "Other" group
     const top = sorted.slice(0, numberOfEntries);
     const rest = sorted.slice(numberOfEntries).flatMap(([, arr]: any) => arr);
-    // rebuild the array with the "Other" group and the null entries at the end
     return [...top, ["Other", rest], ["N/A", missing]];
   }
 

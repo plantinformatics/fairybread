@@ -3,10 +3,6 @@
 import type { PCAPassportData } from '@/config/table-and-filter-config';
 import { parse } from "csv-parse/sync";
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
 /**
  * Parses pasted text as CSV, TSV, or a plain newline-separated list and
  * returns a flat array of lookup terms.
@@ -42,7 +38,6 @@ export function parseInput(text: string): string[] {
     terms.map((genotypeID)=> {
       pcaByGenotypeID.get(genotypeID) ? matched.push(pcaByGenotypeID.get(genotypeID)) : unmatched.push(genotypeID)
     })
-    // Maybe add something to make it case insensitve
   
     return { matched, unmatched };
   }

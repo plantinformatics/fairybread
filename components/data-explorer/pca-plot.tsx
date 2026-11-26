@@ -46,11 +46,8 @@ export function PcaPlot({
   const [data, setData] = useState<any[]>([]);
   const { pcAxes, squarePlot } = usePreferences();
 
-  // react-plotly.js's `useResizeHandler` only reacts to `window` resize
-  // events, so dragging the resizable panel handle (which resizes this
-  // container without resizing the window) never triggers a redraw.
-  // Watch the container itself and nudge Plotly to resize, debounced so we
-  // don't thrash the chart while the user is actively dragging the handle.
+  // react-plotly's `useResizeHandler` only sees window resizes, not the panel drag handle,
+  // so watch the container instead (debounced to avoid thrashing mid-drag).
   useEffect(() => {
     const container = containerRef.current;
     if (!container || typeof ResizeObserver === "undefined") return;

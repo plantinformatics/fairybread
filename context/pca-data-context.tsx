@@ -1,22 +1,5 @@
 'use client';
 
-/**
- * PCA Data Context
- *
- * This module provides a React context that centralises the shared data-fetching
- * state for the PCA passport dataset. Any page or component that needs the
- * loaded data or loading state can call `usePcaData()` instead of managing its
- * own fetch lifecycle.
- *
- * Key concepts used here:
- *  - React Context  : a way to share values across the component tree without
- *                     passing props manually at every level.
- *  - useContext     : the hook a consumer uses to read from a context.
- *  - nuqs           : library that syncs React state with URL query params so
- *                     the selected file/crop persists on page refresh and is
- *                     shareable via URL.
- */
-
 import { createContext, useContext, useEffect, useState } from 'react';
 import { useQueryState } from 'nuqs';
 import posthog from 'posthog-js';
@@ -25,71 +8,28 @@ import { ALL_ACCESSIONS_SUBSET } from '@/config/pca-location-config';
 import { searchParams } from '@/config/search-params';
 import { splitNdjsonLines, type LoadProgress, type PcaDataStreamEvent } from '@/lib/load-progress';
 
-// ---------------------------------------------------------------------------
-// Shape of the value stored in the context
-// ---------------------------------------------------------------------------
-
-/**
- * Everything a consumer can read from (or write to) the shared PCA data store.
- */
 interface PcaDataContextValue {
-  /** The currently selected crop/file key (e.g. "Wheat"). Synced to ?file= in the URL. */
   file: string;
-  /** Update the selected crop. The URL query param is updated automatically. */
+  /** Also resets subset to "All Accessions". */
   setFile: (f: string) => void;
-  /** The currently selected subset key (e.g. "All Accessions"). Synced to ?subset= in the URL. */
   subset: string;
-  /** Update the selected subset. The URL query param is updated automatically. */
   setSubset: (s: string) => void;
-  /** The full loaded dataset for the selected crop/subset. Empty array while loading. */
+  /** Empty array while loading. */
   rawData: PCAPassportData[];
-  /** Proportion of variance explained per PC (index 0 = PC1), or null if unavailable. */
+  /** Proportion of variance explained per PC (index 0 = PC1). */
   pve: number[] | null;
-  /** True while the fetch request is in-flight. Use this to show spinners/skeletons. */
   isLoading: boolean;
-  /** Latest server-reported loading step, or null before the first one arrives. */
   loadProgress: LoadProgress | null;
 }
 
-// ---------------------------------------------------------------------------
-// Create the context
-// ---------------------------------------------------------------------------
-
-/**
- * The context object itself. `undefined` as the default value means that if
- * `usePcaData()` is called outside of a `<PcaDataProvider>` it will throw a
- * helpful error (see below) rather than silently returning stale/empty state.
- */
 const PcaDataContext = createContext<PcaDataContextValue | undefined>(undefined);
 
-// ---------------------------------------------------------------------------
-// Provider component
-// ---------------------------------------------------------------------------
-
-/**
- * Wrap your page tree with this component (e.g. in the root layout) to make
- * PCA data available to all children.
- *
- * It is responsible for:
- *  1. Owning the `file` and `subset` query-param state via nuqs.
- *  2. Fetching (and re-fetching when `file` or `subset` changes) via
- *     `fetchPCAPassportData`.
- *  3. Exposing `{ file, setFile, subset, setSubset, rawData, pve, isLoading, loadProgress }` to
- *     any descendant that calls `usePcaData()`.
- */
 export function PcaDataProvider({ children }: { children: React.ReactNode }) {
-  // Keep the selected crop in the URL (?file=Wheat) so it survives page refresh
-  // and can be bookmarked. nuqs keeps this in sync with React state for us.
   const [file, setQueryFile] = useQueryState('file', searchParams.file);
-  // Keep the selected subset in the URL (?subset=All%20Accessions) alongside `file`.
   const [subset, setQuerySubset] = useQueryState('subset', searchParams.subset);
   const [noCache] = useQueryState('nocache', searchParams.nocache);
 
-  // Wrap the nuqs setters so callers only need to pass a string — the underlying
-  // nuqs setter also accepts null (to clear), but we hide that complexity here.
-  // Subsets are crop-specific, so switching crop always resets the subset
-  // selection back to "All Accessions" — a subset name from one crop is meaningless
-  // (or could silently mismatch) for another.
+  // Subset names are crop-specific, so switching crop resets the subset.
   const setFile = (f: string) => {
     posthog.capture('crop_selected', { crop: f, previous_crop: file });
     setQueryFile(f);
@@ -105,9 +45,7 @@ export function PcaDataProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [loadProgress, setLoadProgress] = useState<LoadProgress | null>(null);
 
-  // Re-run whenever `file` or `subset` changes (including on first mount).
-  // The AbortController prevents a stale fetch from overwriting state if
-  // the user switches crops/subsets before the previous request has finished.
+  // Abort so a stale fetch can't overwrite state after the user switches crop/subset.
   useEffect(() => {
     const controller = new AbortController();
 
@@ -195,18 +133,6 @@ export function PcaDataProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-// ---------------------------------------------------------------------------
-// Consumer hook
-// ---------------------------------------------------------------------------
-
-/**
- * Call this hook in any client component to access the shared PCA data.
- *
- * @example
- * const { file, setFile, subset, setSubset, rawData, pve, isLoading, loadProgress } = usePcaData();
- *
- * @throws If called outside of a `<PcaDataProvider>` tree.
- */
 export function usePcaData(): PcaDataContextValue {
   const ctx = useContext(PcaDataContext);
 

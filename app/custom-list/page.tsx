@@ -26,27 +26,18 @@ import {
 import { parseInput, matchTerms } from '@/lib/customListParseMatch'
 import { useCustomList } from '@/context/custom-list-context';
 import posthog from 'posthog-js';
-// ---------------------------------------------------------------------------
-// Page
-// ---------------------------------------------------------------------------
 
 export default function CustomListPage() {
   const cropOptions = Array.from(PCAFileInfo.keys());
 
   const CUSTOM_LIST_TEXT_STORAGE_KEY = "pca-custom-list-text"
 
-  // `file`, `rawData`, and `isLoading` all come from the shared context —
-  // no local fetch needed here. Changing `file` here will trigger a re-fetch
-  // in the provider and update all pages simultaneously.
   const { file, setFile, subset, rawData, isLoading } = usePcaData();
   const { customList, setCustomList} = useCustomList();
 
-  // matchedRows and unmatchedTerms are the parsed results; they are NOT
-  // persisted — they are derived on demand from inputText + rawData.
   const [inputText, setInputText] = useState<string>('')
   const [matchedRows, setMatchedRows] = useState<PCAPassportData[]>([]);
   const [unmatchedTerms, setUnmatchedTerms] = useState<string[]>([]);
-  // hasParsed gates the results section — we only show it after the first parse.
   const [hasParsed, setHasParsed] = useState(false);
 
   useEffect(()=>{
@@ -56,8 +47,6 @@ export default function CustomListPage() {
     }
   }, [])
 
-  // Called when the user clicks "Parse".
-  // parsedTerms is transient — derived here and not stored in state.
   const handleParse = () => {
     const terms = parseInput(inputText);
     const {matched, unmatched} = matchTerms(terms, rawData);
@@ -127,10 +116,7 @@ export default function CustomListPage() {
       </section>
 
       {/* ── Input area ─────────────────────────────────────────────────────── */}
-      {/*
-        The input is blocked while data is loading. This prevents the user from
-        pasting and parsing against a partially-loaded or wrong-crop dataset.
-      */}
+      {/* Blocked while loading so a paste can't be parsed against a partial or wrong-crop dataset. */}
       <section className="overflow-hidden rounded-xl border bg-card">
         <header className="flex items-center justify-between gap-4 border-b bg-muted/30 px-5 py-3">
           <div className="flex items-center gap-2">
@@ -185,7 +171,6 @@ export default function CustomListPage() {
       </section>
 
       {/* ── Results ────────────────────────────────────────────────────────── */}
-      {/* Only rendered after the user has clicked Parse at least once */}
       {hasParsed && (
         <div className="space-y-6">
 
@@ -271,7 +256,7 @@ export default function CustomListPage() {
             </div>
           </section>
 
-          {/* Unmatched terms — only shown when there is at least one */}
+          {/* Unmatched terms */}
           {unmatchedTerms.length > 0 && (
             <section className="overflow-hidden rounded-xl border bg-card">
               <header className="flex items-center justify-between gap-4 border-b bg-muted/30 px-5 py-3">

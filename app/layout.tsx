@@ -88,8 +88,7 @@ export default function RootLayout({
             <ThemeProvider>
               <AppToaster />
               <PreferencesProvider>
-                {/* PcaDataProvider owns the shared fetch state — must sit inside
-                  NuqsAdapter (already the parent) so useQueryState works */}
+                {/* PcaDataProvider uses useQueryState, so it must stay inside NuqsAdapter */}
                 <CustomListProvider>
                   <PcaDataProvider>
                     <AppFrameWithCookie>{children}</AppFrameWithCookie>
