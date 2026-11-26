@@ -1,4 +1,4 @@
-import type { PcAxes, PcAxis } from "@/context/preferences-context";
+import type { PcAxes, PcAxis } from "@/lib/pc-axes";
 
 /** e.g. "PC1" or "PC1 (14.7%)" when PVE is available. */
 export function pcAxisTitle(pc: PcAxis, pve?: number[] | null): string {
@@ -46,9 +46,7 @@ export const chartLayout = {
       bgcolor: "rgba(255,255,255,0.8)",
       bordercolor: "#e5e7eb",
       borderwidth: 1,
-      // Keep legend marker icons a fixed size regardless of trace marker.size.
-      // Without this, scatter3d traces render tiny legend dots when marker.size
-      // is small (scatter2d legend icons are already fixed-size).
+      // Otherwise scatter3d legend dots shrink with the traces' small marker.size.
       itemsizing: "constant" as const,
     },
     height: 500,
@@ -87,7 +85,6 @@ export function buildChartLayout(
   palette: string,
   pcAxes: PcAxes,
   pve: number[] | null = null,
-  // Lock axes to equal units (1 unit of PC x == 1 unit of PC y on screen).
   equalAxisScale = false,
 ) {
   const { height: _defaultHeight, ...baseLayout } = chartLayout;
@@ -106,8 +103,7 @@ export function buildChartLayout(
     color: theme.axisColor,
     gridcolor: theme.gridColor,
     zerolinecolor: theme.zeroLineColor,
-    // Plotly widens whichever axis range is needed to keep units equal, so
-    // the plot still fills the panel.
+    // Plotly widens one axis range to keep units equal, so the plot still fills the panel.
     ...(equalAxisScale && { scaleanchor: "x" as const, scaleratio: 1 }),
   };
 
@@ -123,11 +119,10 @@ export function buildChartLayout(
     },
     xaxis,
     yaxis,
-    // scatter3d traces (used when a Z axis is selected) read their axes from
-    // `scene.*axis` rather than the top-level `xaxis`/`yaxis` above.
+    // scatter3d traces read their axes from `scene.*axis`, not the top-level `xaxis`/`yaxis`.
     ...(pcAxes.z && {
       scene: {
-        // "data" keeps all three axes in equal units; "auto" is Plotly's default.
+        // "data" keeps all three axes in equal units.
         aspectmode: equalAxisScale ? ("data" as const) : ("auto" as const),
         xaxis,
         yaxis,

@@ -1,8 +1,12 @@
 'use client';
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useSyncExternalStore } from 'react';
+import { usePersistedState } from '@/hooks/use-persisted-state';
+import { oneOfCodec } from '@/lib/storage-codecs';
 
 const STORAGE_KEY = 'theme';
+const themeCodec = oneOfCodec(['dark', 'light']);
+const DARK_SCHEME_QUERY = '(prefers-color-scheme: dark)';
 
 type ThemeContextValue = {
   isDark: boolean;
@@ -12,31 +16,37 @@ type ThemeContextValue = {
 
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
-function applyTheme(nextIsDark: boolean) {
-  document.documentElement.classList.toggle('dark', nextIsDark);
-  window.localStorage.setItem(STORAGE_KEY, nextIsDark ? 'dark' : 'light');
+function subscribeToColorScheme(onChange: () => void) {
+  const query = window.matchMedia(DARK_SCHEME_QUERY);
+  query.addEventListener('change', onChange);
+  return () => query.removeEventListener('change', onChange);
+}
+
+function usePrefersDark(): boolean {
+  return useSyncExternalStore(
+    subscribeToColorScheme,
+    () => window.matchMedia(DARK_SCHEME_QUERY).matches,
+    () => false,
+  );
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [isDark, setIsDarkState] = useState(false);
+  const [storedTheme, setStoredTheme] = usePersistedState(STORAGE_KEY, null, themeCodec);
+  const prefersDark = usePrefersDark();
+  const isDark = storedTheme === null ? prefersDark : storedTheme === 'dark';
 
-  const setIsDark = useCallback((nextIsDark: boolean) => {
-    applyTheme(nextIsDark);
-    setIsDarkState(nextIsDark);
-  }, []);
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', isDark);
+  }, [isDark]);
+
+  const setIsDark = useCallback(
+    (nextIsDark: boolean) => setStoredTheme(nextIsDark ? 'dark' : 'light'),
+    [setStoredTheme],
+  );
 
   const toggleTheme = useCallback(() => {
     setIsDark(!isDark);
   }, [isDark, setIsDark]);
-
-  useEffect(() => {
-    const stored = window.localStorage.getItem(STORAGE_KEY);
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const nextIsDark = stored ? stored === 'dark' : prefersDark;
-
-    applyTheme(nextIsDark);
-    setIsDarkState(nextIsDark);
-  }, []);
 
   const value = useMemo(
     () => ({ isDark, setIsDark, toggleTheme }),

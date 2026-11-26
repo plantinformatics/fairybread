@@ -1,4 +1,4 @@
-import type { PcAxes } from '@/context/preferences-context';
+import type { PcAxes } from '@/lib/pc-axes';
 import { chartColourPalettes } from '@/config/chart-config';
 
 /** Group-by mode that splits rows into `MATCH_GROUP` / `NOT_MATCH_GROUP` by the table filters. */
@@ -52,11 +52,7 @@ export function orderGroupsForPlot<T extends [string, unknown]>(groupedEntries: 
   return [...groupedEntries].sort(([a], [b]) => Number(a === MATCH_GROUP) - Number(b === MATCH_GROUP));
 }
 
-/**
- * Maps each row's `genotypeID` to the colour its group is assigned in the
- * PCA plot (same group order + palette, see `createPlotData`). Used to draw
- * colour swatches next to values in the active group-by / filtered column.
- */
+/** Maps each row's `genotypeID` to its group's colour in the PCA plot. */
 export function buildRowColorMap(
   groupedEntries: [string, any[]][],
   palette: string,
@@ -96,8 +92,8 @@ export function createPlotData(
         ]),
         name: (key.length < 20 ? key : key.substring(0, 17) + "...") + " (" + value.length + ")",
         opacity: key === MATCH_GROUP ? 0.8 : 0.5,
-        mode: "markers",
-        type: pcz ? "scatter3d" : "scattergl",
+        mode: "markers" as const,
+        type: pcz ? ("scatter3d" as const) : ("scattergl" as const),
         marker: pcz ? { size: 3 } : { size: 5 },
         hovertemplate:
         "<u><b>%{text}</b></u><br>" +

@@ -20,8 +20,6 @@ import { usePcaData } from "@/context/pca-data-context";
 
 export default function BreadCrumbNav() {
   const cropOptions = Array.from(PCAFileInfo.keys());
-  // Reads/writes go through the shared context so that switching crop here
-  // resets the subset selection everywhere (see `setFile` in the provider).
   const {
     file: selectedCrop,
     setFile: setSelectedCrop,

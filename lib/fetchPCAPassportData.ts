@@ -63,7 +63,6 @@ async function fetchAndParsePveFile(pveFileUrl: string, noCache: boolean, tags: 
   }
 }
 
-/** Fetches one page of passport data from Genolink for the given genotype IDs. */
 async function fetchPassportPage(pageNum: number, ids: string[], selectFields: string, pageSize: number): Promise<{ content?: Record<string, unknown>[] }> {
   const queryParams = new URLSearchParams({
     select: selectFields,

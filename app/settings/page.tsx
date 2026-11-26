@@ -4,7 +4,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { RefreshDataCache } from "@/components/refresh-data-cache";
 import { chartColourPalettes } from "@/config/chart-config";
-import { PC_OPTIONS, type PcAxis, usePreferences } from "@/context/preferences-context";
+import { usePreferences } from "@/context/preferences-context";
+import { isPcAxis, PC_OPTIONS } from "@/lib/pc-axes";
 import posthog from "posthog-js";
 
 const PALETTE_NAMES = Array.from(chartColourPalettes.keys());
@@ -33,9 +34,9 @@ export default function SettingsPage() {
 
   const handlePcChange = (axis: 'x' | 'y') => (value: string | null) => {
     if (!value) return;
-    if ((PC_OPTIONS as readonly string[]).includes(value)) {
+    if (isPcAxis(value)) {
       posthog.capture('pc_axes_changed', { axis, value, previous_value: pcAxes[axis] });
-      setPcAxes((prev) => ({ ...prev, [axis]: value as PcAxis }));
+      setPcAxes((prev) => ({ ...prev, [axis]: value }));
     }
   };
 
@@ -46,9 +47,9 @@ export default function SettingsPage() {
       setPcAxes((prev) => ({ ...prev, z: null }));
       return;
     }
-    if ((PC_OPTIONS as readonly string[]).includes(value)) {
+    if (isPcAxis(value)) {
       posthog.capture('pc_axes_changed', { axis: 'z', value, previous_value: pcAxes.z });
-      setPcAxes((prev) => ({ ...prev, z: value as PcAxis }));
+      setPcAxes((prev) => ({ ...prev, z: value }));
     }
   };
 
