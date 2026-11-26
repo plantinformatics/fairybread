@@ -21,6 +21,14 @@ describe("replaceNullsWithMissing", () => {
       b: { c: ["N/A", 0, ""] },
     })
   })
+
+  test("handles top-level null, primitives and arrays", () => {
+    expect(replaceNullsWithMissing(null)).toBe("N/A")
+    expect(replaceNullsWithMissing(undefined)).toBeUndefined()
+    expect(replaceNullsWithMissing(5)).toBe(5)
+    expect(replaceNullsWithMissing("x")).toBe("x")
+    expect(replaceNullsWithMissing([null, [null, { a: null }]])).toEqual(["N/A", ["N/A", { a: "N/A" }]])
+  })
 })
 
 describe("joinListFields", () => {

@@ -119,7 +119,8 @@ export function joinListFields(row: Record<string, unknown>): Record<string, unk
   );
 }
 
-export function replaceNullsWithMissing(value: any): any {
+/** Recursively replaces every null (in nested arrays and objects too) with "N/A". */
+export function replaceNullsWithMissing(value: unknown): unknown {
   if (value === null) return 'N/A';
 
   if (Array.isArray(value)) {
