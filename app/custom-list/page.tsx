@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import type { PCAPassportData } from '@/config/table-and-filter-config';
 import { PCAFileInfo, getDatasetInfo } from '@/config/pca-location-config';
 import { usePcaData } from '@/context/pca-data-context';
@@ -25,15 +25,21 @@ import {
 } from 'lucide-react';
 import { parseInput, matchTerms } from '@/lib/customListParseMatch'
 import { useCustomList } from '@/context/custom-list-context';
+import { createLocalStorageStore, useLocalStorageStore } from '@/lib/local-storage-store';
 import posthog from 'posthog-js';
+// The raw pasted text, kept across reloads so the user doesn't lose their input.
+const inputTextStore = createLocalStorageStore<string>(
+  'pca-custom-list-text',
+  (raw) => raw ?? '',
+  String,
+);
+
 // ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
 
 export default function CustomListPage() {
   const cropOptions = Array.from(PCAFileInfo.keys());
-
-  const CUSTOM_LIST_TEXT_STORAGE_KEY = "pca-custom-list-text"
 
   // `file`, `rawData`, and `isLoading` all come from the shared context —
   // no local fetch needed here. Changing `file` here will trigger a re-fetch
@@ -43,18 +49,12 @@ export default function CustomListPage() {
 
   // matchedRows and unmatchedTerms are the parsed results; they are NOT
   // persisted — they are derived on demand from inputText + rawData.
-  const [inputText, setInputText] = useState<string>('')
+  const inputText = useLocalStorageStore(inputTextStore);
+  const setInputText = inputTextStore.set;
   const [matchedRows, setMatchedRows] = useState<PCAPassportData[]>([]);
   const [unmatchedTerms, setUnmatchedTerms] = useState<string[]>([]);
   // hasParsed gates the results section — we only show it after the first parse.
   const [hasParsed, setHasParsed] = useState(false);
-
-  useEffect(()=>{
-    const savedText = window.localStorage.getItem(CUSTOM_LIST_TEXT_STORAGE_KEY);
-    if (savedText) {
-      setInputText(savedText);
-    }
-  }, [])
 
   // Called when the user clicks "Parse".
   // parsedTerms is transient — derived here and not stored in state.
@@ -157,10 +157,7 @@ export default function CustomListPage() {
                   'Paste genotype IDs here\u2026\n\nOne per line, or CSV/TSV (all fields are used).\nExample:\n  WAWB0001\n  WAWB0002'
                 }
                 value={inputText}
-                onChange={(e) => 
-                  {setInputText(e.target.value);
-                   window.localStorage.setItem(CUSTOM_LIST_TEXT_STORAGE_KEY, e.target.value);
-                  }}
+                onChange={(e) => setInputText(e.target.value)}
               />
               <div className="mt-3 flex gap-2">
                 <Button
