@@ -10,14 +10,15 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { columns } from '@/config/table-and-filter-config';
+import { columns, groupByLabel } from '@/config/table-and-filter-config';
+import { TEXT_FILTER_GROUP_BY } from '@/lib/dataProcessing';
 import { ChevronsUpDown, Group } from 'lucide-react';
 import posthog from 'posthog-js';
 
-const groupingColumns = columns.filter(
-  (col): col is (typeof columns)[number] & { accessorKey: string } =>
-    col.enableGrouping === true && typeof col.accessorKey === 'string'
-);
+const groupingAccessorKeys = columns
+  .filter((col) => col.enableGrouping === true)
+  .map((col) => col.accessorKey)
+  .filter((key) => key !== undefined);
 
 export function PcaGroupByDropdown({
   groupBy,
@@ -31,17 +32,12 @@ export function PcaGroupByDropdown({
     void setGroupBy(value);
   };
 
-  const options = [
-    ...groupingColumns.map((col) => ({
-      value: col.accessorKey,
-      label: String(col.id),
-    })),
-    { value: 'textFilter', label: 'Text filter' },
-  ];
+  const options = [...groupingAccessorKeys, TEXT_FILTER_GROUP_BY].map((value) => ({
+    value,
+    label: groupByLabel(value),
+  }));
 
-  const groupByLabel =
-    options.find((option) => option.value === groupBy)?.label ??
-    (groupBy === 'textFilter' ? 'Text filter' : 'Group by');
+  const triggerLabel = options.find((option) => option.value === groupBy)?.label ?? 'Group by';
 
   return (
     <DropdownMenu>
@@ -49,7 +45,7 @@ export function PcaGroupByDropdown({
         render={
           <Button variant="outline" size="sm">
             <Group className="mr-1 h-4 w-4 shrink-0" />
-            <span className="truncate">{groupByLabel}</span>
+            <span className="truncate">{triggerLabel}</span>
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         }

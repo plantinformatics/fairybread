@@ -8,9 +8,8 @@
 // genotypeID, inAllAccessions (whether the ID is also in the crop's full dataset), reason.
 import { mkdir } from 'node:fs/promises';
 import { ALL_ACCESSIONS_SUBSET, PCAFileInfo, getDatasetInfo, getSubsetNames } from '@/config/pca-location-config';
-import { GENOLINK_QUERY_URL, accessionOfGenotypeId, partitionGenolinkIds } from '@/lib/genolink-ids';
+import { GENOLINK_PAGE_SIZE, GENOLINK_QUERY_URL, accessionOfGenotypeId, partitionGenolinkIds } from '@/lib/genolink-ids';
 
-const PAGE_SIZE = 3000;
 const OUT_DIR = 'logs';
 
 async function fetchGenotypeIds(fileUrl: string): Promise<string[]> {
@@ -24,8 +23,8 @@ async function fetchGenotypeIds(fileUrl: string): Promise<string[]> {
 
 /** Accessions Genolink has passport data for. Genolink returns one row per accession, however many of its genotype IDs are sent. */
 async function fetchAccessionsWithPassport(ids: string[]): Promise<Set<string>> {
-  const pages = await Promise.all(Array.from({ length: Math.ceil(ids.length / PAGE_SIZE) }, async (_, page) => {
-    const params = new URLSearchParams({ select: 'accessionNumber', l: String(PAGE_SIZE), p: String(page) });
+  const pages = await Promise.all(Array.from({ length: Math.ceil(ids.length / GENOLINK_PAGE_SIZE) }, async (_, page) => {
+    const params = new URLSearchParams({ select: 'accessionNumber', l: String(GENOLINK_PAGE_SIZE), p: String(page) });
     const response = await fetch(`${GENOLINK_QUERY_URL}?${params}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },

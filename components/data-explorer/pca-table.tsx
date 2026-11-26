@@ -21,7 +21,7 @@ import { PcaTableToolbar } from '@/components/data-explorer/pca-table-toolbar';
 import { useCustomList } from '@/context/custom-list-context';
 import { CUSTOM_LIST_FILTER_KEY } from '@/config/search-params';
 import { usePreferences } from '@/context/preferences-context';
-import { buildGroupedEntries, buildRowColorMap } from '@/lib/dataProcessing';
+import { buildGroupedEntries, buildRowColorMap, TEXT_FILTER_GROUP_BY } from '@/lib/dataProcessing';
 import type { FilterFieldConfig } from '@/components/reui/filters';
 import { ListChecks } from 'lucide-react';
 
@@ -50,7 +50,7 @@ export function PcaTable({
   const [columnOrder, setColumnOrder] = useState<string[]>(columns.map((column) => column.id as string));
   const [sorting, setSorting] = useState<SortingState>([{ id: 'Genotype ID', desc: false }]);
   const [tableData, setTableData] = useState<PCAPassportData[]>([])
-  const previousGroupByRef = useRef<string>(groupBy === "textFilter" ? "textFilter" : groupBy);
+  const previousGroupByRef = useRef<string>(groupBy);
   const isAutoTextFilterGroupByRef = useRef<boolean>(false);
   const { customList } = useCustomList();
   const { palette } = usePreferences();
@@ -102,12 +102,12 @@ export function PcaTable({
   }, [appliedFilters]);
 
   // Per-column colour maps for the active group-by and any filtered columns.
-  // When filters force groupBy to "textFilter", filtered columns still get
-  // value-based colours (rather than Match/Not Match) so the table dots stay useful.
+  // When filters force groupBy to `TEXT_FILTER_GROUP_BY`, filtered columns still get
+  // value-based colours (rather than `MATCH_GROUP` / `NOT_MATCH_GROUP`) so the table dots stay useful.
   const columnColorMaps = useMemo(() => {
     const maps = new Map<string, Map<string, string>>();
     const fieldsToColor = new Set<string>(activeFilterFields);
-    if (groupBy && groupBy !== "textFilter") {
+    if (groupBy && groupBy !== TEXT_FILTER_GROUP_BY) {
       fieldsToColor.add(groupBy);
     }
     for (const field of fieldsToColor) {
@@ -139,17 +139,17 @@ export function PcaTable({
 
   useEffect(() => {
     if (hasTextFilterInput) {
-      if (groupBy !== "textFilter") {
+      if (groupBy !== TEXT_FILTER_GROUP_BY) {
         previousGroupByRef.current = groupBy;
         isAutoTextFilterGroupByRef.current = true;
-        setGroupBy("textFilter");
+        setGroupBy(TEXT_FILTER_GROUP_BY);
       }
       return;
     }
 
-    if (isAutoTextFilterGroupByRef.current && groupBy === "textFilter") {
+    if (isAutoTextFilterGroupByRef.current && groupBy === TEXT_FILTER_GROUP_BY) {
       isAutoTextFilterGroupByRef.current = false;
-      if (previousGroupByRef.current !== "textFilter") {
+      if (previousGroupByRef.current !== TEXT_FILTER_GROUP_BY) {
         setGroupBy(previousGroupByRef.current);
       }
       return;

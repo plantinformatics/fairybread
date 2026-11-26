@@ -1,29 +1,14 @@
-/**
- * Adding a new field from the Genolink / Genesys API
- * ---------------------------------------------------
- * The `accessorKey` of each column is what gets sent to the Genolink API as a
- * `select` field (see `passportDataSelectFields` at the bottom of this file,
- * consumed by `lib/fetchPCAPassportData.ts`). To add a new column:
- *
- * 1. Find the field name in the Genolink/Genesys accession schema
- *    (https://genolink.plantinformatics.io/ — nested fields use dot notation,
- *    e.g. `countryOfOrigin.name`).
- * 2. Add it to the `PCAPassportData` type below so it is typed end-to-end.
- * 3. Add a new entry to the `columns` array with `accessorKey` set to the
- *    exact API field name. Provide an `id`, `header`, and `meta.filter` config
- *    (label + lucide icon). For nested fields also set `accessorFn` (see the
- *    "Country of Origin" / "Taxonomy" entries as templates).
- */
-
 import type { CellContext, ColumnDef, HeaderContext, RowData } from "@tanstack/react-table"
 import { DataGridColumnHeader } from "@/components/reui/data-grid/data-grid-column-header"
 import type { FilterFieldConfig } from "@/components/reui/filters"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+import { doiUrl, genesysAccessionUrl } from "@/lib/accession-links"
+import { TEXT_FILTER_GROUP_BY } from "@/lib/dataProcessing"
 
 declare module "@tanstack/react-table" {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     interface TableMeta<TData extends RowData> {
-        /** The `accessorKey` the table/plot is currently grouped by (or "textFilter"). */
+        /** The `accessorKey` the table/plot is currently grouped by (or `TEXT_FILTER_GROUP_BY`). */
         groupBy?: string
         /** Column `accessorKey`s that currently have a non-empty table filter. */
         activeFilterFields?: string[]
@@ -177,7 +162,8 @@ type ColumnMeta = {
 }
 
 type FilterableColumnDef = ColumnDef<PCAPassportData> & {
-    accessorKey?: string
+    /** Also sent to Genolink as a `select` field, so it must be a real API field name. */
+    accessorKey?: keyof PCAPassportData
     meta?: ColumnMeta
 }
 
@@ -211,13 +197,12 @@ export const columns: FilterableColumnDef[] = [
         accessorKey: "accessionNumber",
         header: renderActiveColumnHeader("accessionNumber", "Accession Number"),
         cell: ({ row, table }) => {
-            // genesys uses the doi as the URL not the accession number
             const color = getColumnDotColor(table, "accessionNumber", row.original.genotypeID)
             return (
                 <span className="flex min-w-0 items-center gap-2">
                     {color && <GroupColorDot color={color} />}
                     <a
-                        href={"https://www.genesys-pgr.org/" + row.original.doi as string}
+                        href={genesysAccessionUrl(row.original.doi)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="min-w-0 break-words font-bold underline-offset-4 hover:underline"
@@ -253,7 +238,6 @@ export const columns: FilterableColumnDef[] = [
         header: renderActiveColumnHeader("countryOfOrigin.name", "Country of Origin"),
         accessorFn: (row) => row["countryOfOrigin.name"],
         accessorKey: "countryOfOrigin.name",
-        // Uncommon implamentation of having accessor key and accessor function, could lead to unepxected behaviour
         sortingFn: 'text',
         enableGrouping: true,
         cell: renderActiveColumnCell("countryOfOrigin.name"),
@@ -299,7 +283,7 @@ export const columns: FilterableColumnDef[] = [
         header: "DOI",
         cell: ({ getValue }) => (
             <a
-                href={"https://doi.org/" +getValue() as string}
+                href={doiUrl(getValue() as string)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="font-bold underline-offset-4 hover:underline"
@@ -377,17 +361,13 @@ export const columns: FilterableColumnDef[] = [
 
 export const passportDataSelectFields = columns
     .map((column) => column.accessorKey)
-    .filter((key): key is string => typeof key === "string")
+    .filter((key) => key !== undefined)
 
 export const fields: FilterFieldConfig[] = columns
-    .filter((column) => {
-        const filter = column.meta?.filter
-        if (filter?.include === false) return false
-        return typeof column.accessorKey === "string"
-    })
+    .filter((column) => column.accessorKey !== undefined && column.meta?.filter?.include !== false)
     .map((column) => {
         const filter = column.meta?.filter
-        const key = column.accessorKey as string
+        const key = column.accessorKey!
         return {
             key,
             label: filter?.label ?? String(column.id ?? key),
@@ -398,4 +378,10 @@ export const fields: FilterFieldConfig[] = columns
             className: filter?.className ?? "w-40",
         } satisfies FilterFieldConfig
     })
-    
+
+/** Display name for a group-by value: the column's name, or "Text filter". */
+export function groupByLabel(groupBy: string): string {
+    if (groupBy === TEXT_FILTER_GROUP_BY) return "Text filter"
+    const column = columns.find((col) => col.accessorKey === groupBy)
+    return column?.id ?? groupBy
+}

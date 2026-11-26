@@ -1,6 +1,7 @@
 "use client"
 
 import { createContext, useContext, useEffect, useState } from 'react';
+import { isStringArray } from '@/lib/type-guards';
 
 
 const PALETTE_STORAGE_KEY = 'pca-custom-list-ids';
@@ -21,12 +22,11 @@ export function CustomListProvider({ children }: { children: React.ReactNode }) 
     const [isHydrated, setIsHydrated] = useState<boolean>(false);
 
     useEffect(() => {
-        if (typeof window === "undefined") return;
         const savedCustomList = window.localStorage.getItem(PALETTE_STORAGE_KEY);
         if (savedCustomList) {
             try {
-                const parsedCustomList = JSON.parse(savedCustomList)
-                if (Array.isArray(parsedCustomList) && parsedCustomList.every((v) => typeof v === "string")) {
+                const parsedCustomList: unknown = JSON.parse(savedCustomList)
+                if (isStringArray(parsedCustomList)) {
                     setCustomList(parsedCustomList);
                 }
             } catch {
@@ -37,7 +37,6 @@ export function CustomListProvider({ children }: { children: React.ReactNode }) 
     }, []);
 
     useEffect(() => {
-        if (typeof window === "undefined") return;
         if (!isHydrated) return;
         window.localStorage.setItem(PALETTE_STORAGE_KEY, JSON.stringify(customList));
       }, [isHydrated, customList]);
