@@ -116,7 +116,7 @@ function getColumnDotColor(
  * filter is applied on this column.
  */
 const renderActiveColumnHeader = (accessorKey: string, title: string) =>
-    ({ column, table }: HeaderContext<PCAPassportData, unknown>) => {
+    function ActiveColumnHeader({ column, table }: HeaderContext<PCAPassportData, unknown>) {
         const isActive = isColumnHighlighted(table, accessorKey)
 
         return (
@@ -136,7 +136,7 @@ const renderActiveColumnHeader = (accessorKey: string, title: string) =>
  * inside the fixed-width cell instead of overflowing.
  */
 const renderActiveColumnCell = (accessorKey: string) =>
-    ({ row, table, getValue }: CellContext<PCAPassportData, unknown>) => {
+    function ActiveColumnCell({ row, table, getValue }: CellContext<PCAPassportData, unknown>) {
         const color = getColumnDotColor(table, accessorKey, row.original.genotypeID)
         return (
             <span className="flex min-w-0 items-center gap-2">

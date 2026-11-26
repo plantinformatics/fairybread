@@ -159,9 +159,9 @@ export function PcaTable({
 
   // Used to create the subset for pca-plot
   useEffect(() => {
-    const byGenotypeID = { IID: filteredData.map((p:any) => p.genotypeID)}
+    const byGenotypeID = { IID: filteredData.map((p) => p.genotypeID)}
     setTableFiltered(byGenotypeID)
-  }, [filteredData])
+  }, [filteredData, setTableFiltered])
 
   const table = useReactTable({
     columns,

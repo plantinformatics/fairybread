@@ -35,13 +35,15 @@ export function parseInput(text: string): string[] {
     terms: string[],
     data: PCAPassportData[]
   ): { matched: PCAPassportData[]; unmatched: string[] } {
-    const pcaByGenotypeID = new Map(data.map((p: any) => [p.genotypeID, p]));
+    const pcaByGenotypeID = new Map(data.map((p) => [p.genotypeID, p]));
     const matched: PCAPassportData[] = [];
     const unmatched: string[] = [];
 
-    terms.map((genotypeID)=> {
-      pcaByGenotypeID.get(genotypeID) ? matched.push(pcaByGenotypeID.get(genotypeID)) : unmatched.push(genotypeID)
-    })
+    for (const genotypeID of terms) {
+      const row = pcaByGenotypeID.get(genotypeID);
+      if (row) matched.push(row);
+      else unmatched.push(genotypeID);
+    }
     // Maybe add something to make it case insensitve
   
     return { matched, unmatched };
