@@ -1,6 +1,7 @@
 'use client';
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo } from 'react';
+import { createLocalStorageStore, useLocalStorageStore } from '@/lib/local-storage-store';
 
 const STORAGE_KEY = 'theme';
 
@@ -12,35 +13,28 @@ type ThemeContextValue = {
 
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
-function applyTheme(nextIsDark: boolean) {
-  document.documentElement.classList.toggle('dark', nextIsDark);
-  window.localStorage.setItem(STORAGE_KEY, nextIsDark ? 'dark' : 'light');
-}
+// With nothing stored, follow the OS preference. SSR and hydration render light.
+const themeStore = createLocalStorageStore<boolean>(
+  STORAGE_KEY,
+  (raw) => (raw !== null ? raw === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches),
+  (isDark) => (isDark ? 'dark' : 'light'),
+  false,
+);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [isDark, setIsDarkState] = useState(false);
-
-  const setIsDark = useCallback((nextIsDark: boolean) => {
-    applyTheme(nextIsDark);
-    setIsDarkState(nextIsDark);
-  }, []);
-
-  const toggleTheme = useCallback(() => {
-    setIsDark(!isDark);
-  }, [isDark, setIsDark]);
+  const isDark = useLocalStorageStore(themeStore);
 
   useEffect(() => {
-    const stored = window.localStorage.getItem(STORAGE_KEY);
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const nextIsDark = stored ? stored === 'dark' : prefersDark;
-
-    applyTheme(nextIsDark);
-    setIsDarkState(nextIsDark);
-  }, []);
+    document.documentElement.classList.toggle('dark', isDark);
+  }, [isDark]);
 
   const value = useMemo(
-    () => ({ isDark, setIsDark, toggleTheme }),
-    [isDark, setIsDark, toggleTheme]
+    () => ({
+      isDark,
+      setIsDark: themeStore.set,
+      toggleTheme: () => themeStore.set(!themeStore.getSnapshot()),
+    }),
+    [isDark]
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;

@@ -15,66 +15,56 @@
  *   3. A `useXxx()` consumer hook that pulls the value out with `useContext`.
  */
 
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext } from 'react';
 import { chartColourPalettes } from '@/config/chart-config';
+import {
+  DEFAULT_PC_AXES,
+  createLocalStorageStore,
+  parseStoredBoolean,
+  parseStoredPcAxes,
+  useIsHydrated,
+  useLocalStorageStore,
+  type PcAxes,
+} from '@/lib/local-storage-store';
+
+export { PC_OPTIONS, type PcAxes, type PcAxis } from '@/lib/local-storage-store';
 
 // ---------------------------------------------------------------------------
-// Constants — defaults + storage keys (one key per preference)
+// Stores — one localStorage key per preference
 // ---------------------------------------------------------------------------
 
 const DEFAULT_PALETTE = 'Dark';
-const PALETTE_STORAGE_KEY = 'pca-plot-palette';
 
-export const PC_OPTIONS = [
-  'PC1', 'PC2', 'PC3', 'PC4', 'PC5',
-  'PC6', 'PC7', 'PC8', 'PC9', 'PC10',
-] as const;
-export type PcAxis = typeof PC_OPTIONS[number];
+const paletteStore = createLocalStorageStore<string>(
+  'pca-plot-palette',
+  (raw) => (raw && chartColourPalettes.has(raw) ? raw : DEFAULT_PALETTE),
+  String,
+);
+const advancedPlotSettingsStore = createLocalStorageStore(
+  'pca-plot-advanced-settings',
+  (raw) => parseStoredBoolean(raw, false),
+  String,
+);
+const resizablePlotStore = createLocalStorageStore(
+  'pca-plot-resizable',
+  (raw) => parseStoredBoolean(raw, false),
+  String,
+);
+const squarePlotStore = createLocalStorageStore(
+  'pca-plot-square',
+  (raw) => parseStoredBoolean(raw, false),
+  String,
+);
+const pcAxesStore = createLocalStorageStore('pca-plot-pc-axes', parseStoredPcAxes, JSON.stringify);
 
-const isPcAxis = (value: string | null): value is PcAxis =>
-  value !== null && (PC_OPTIONS as readonly string[]).includes(value);
-
-export interface PcAxes {
-  x: PcAxis;
-  y: PcAxis;
-  z: PcAxis | null; // optional value for 3d plotly
-}
-
-const DEFAULT_ADVANCED_PLOT_SETTINGS = false;
-const DEFAULT_PC_AXES: PcAxes = { x: 'PC1', y: 'PC2', z: null };
-
-const ADVANCED_PLOT_SETTINGS_STORAGE_KEY = 'pca-plot-advanced-settings';
-const PC_AXES_STORAGE_KEY = 'pca-plot-pc-axes';
-const RESIZABLE_PLOT_STORAGE_KEY = 'pca-plot-resizable';
-const SQUARE_PLOT_STORAGE_KEY = 'pca-plot-square';
-
-/** Read a stored `"true"`/`"false"` flag, or `null` if missing/invalid. */
-const readStoredBoolean = (key: string): boolean | null => {
-  const raw = window.localStorage.getItem(key);
-  return raw === 'true' || raw === 'false' ? raw === 'true' : null;
+const setPalette = (palette: string) => {
+  if (chartColourPalettes.has(palette)) paletteStore.set(palette);
 };
 
-/** Coerce an unknown value to a `PcAxis`, returning `fallback` if invalid. */
-const coercePcAxis = (value: unknown, fallback: PcAxis): PcAxis => {
-  if (typeof value === 'string' && isPcAxis(value)) return value;
-  return fallback;
-};
-
-/** Parse a stored JSON blob into a `PcAxes`, falling back to defaults per-field. */
-const parseStoredPcAxes = (raw: string | null): PcAxes | null => {
-  if (!raw) return null;
-  try {
-    const parsed = JSON.parse(raw) as unknown;
-    if (typeof parsed !== 'object' || parsed === null) return null;
-    const { x, y, z } = parsed as Record<string, unknown>;
-    return {
-      x: coercePcAxis(x, DEFAULT_PC_AXES.x),
-      y: coercePcAxis(y, DEFAULT_PC_AXES.y),
-      z: typeof z === 'string' && isPcAxis(z) ? z : null,
-    };
-  } catch {
-    return null;
-  }
+// Functional updates read the stored (not effective) axes, so editing one axis
+// keeps the user's other stored choices.
+const setPcAxes = (update: PcAxes | ((prev: PcAxes) => PcAxes)) => {
+  pcAxesStore.set(typeof update === 'function' ? update(pcAxesStore.getSnapshot()) : update);
 };
 
 // ---------------------------------------------------------------------------
@@ -88,7 +78,7 @@ const parseStoredPcAxes = (raw: string | null): PcAxes | null => {
 interface PreferencesContextValue {
   /** Current chart colour palette name (e.g. "Dark"). */
   palette: string;
-  /** Update the palette. Persists to localStorage via the provider's effect. */
+  /** Update the palette. Persists to localStorage; unknown palette names are ignored. */
   setPalette: (palette: string) => void;
   /** Whether advanced plot settings (PC axis pickers, 3D PCA) are enabled. */
   advancedPlotSettings: boolean;
@@ -109,8 +99,8 @@ interface PreferencesContextValue {
   squarePlot: boolean;
   setSquarePlot: (enabled: boolean) => void;
   /**
-   * True once the provider has read localStorage on the client. Consumers
-   * that care about avoiding a flash of default values can gate on this.
+   * False during SSR and hydration (values are defaults), true once the
+   * client renders stored values.
    */
   isHydrated: boolean;
 }
@@ -135,75 +125,18 @@ const PreferencesContext = createContext<PreferencesContextValue | undefined>(un
  * to make preferences available to all descendants.
  *
  * It is responsible for:
- *   1. Owning the state for every preference (`palette`, ...).
- *   2. Hydrating that state from localStorage on first client render.
- *   3. Persisting changes back to localStorage.
- *   4. Exposing the combined value to any descendant that calls `usePreferences()`.
+ *   1. Subscribing to every preference (`palette`, ...).
+ *   2. Reading and writing it through localStorage-backed stores
+ *      (`lib/local-storage-store.ts`), so there is no hydrate/persist effect.
+ *   3. Exposing the combined value to any descendant that calls `usePreferences()`.
  */
 export function PreferencesProvider({ children }: { children: React.ReactNode }) {
-  // --- State ---------------------------------------------------------------
-  const [palette, setPalette] = useState<string>(DEFAULT_PALETTE);
-  const [advancedPlotSettings, setAdvancedPlotSettings] = useState<boolean>(
-    DEFAULT_ADVANCED_PLOT_SETTINGS,
-  );
-  const [pcAxes, setPcAxes] = useState<PcAxes>(DEFAULT_PC_AXES);
-  const [resizablePlot, setResizablePlot] = useState<boolean>(false);
-  const [squarePlot, setSquarePlot] = useState<boolean>(false);
-  const [isHydrated, setIsHydrated] = useState<boolean>(false);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const savedPalette = window.localStorage.getItem(PALETTE_STORAGE_KEY);
-    if (savedPalette && chartColourPalettes.has(savedPalette)) {
-      setPalette(savedPalette);
-    }
-
-    const savedAdvanced = readStoredBoolean(ADVANCED_PLOT_SETTINGS_STORAGE_KEY);
-    if (savedAdvanced !== null) setAdvancedPlotSettings(savedAdvanced);
-
-    const savedResizable = readStoredBoolean(RESIZABLE_PLOT_STORAGE_KEY);
-    if (savedResizable !== null) setResizablePlot(savedResizable);
-
-    const savedSquare = readStoredBoolean(SQUARE_PLOT_STORAGE_KEY);
-    if (savedSquare !== null) setSquarePlot(savedSquare);
-
-    const savedPcAxes = parseStoredPcAxes(
-      window.localStorage.getItem(PC_AXES_STORAGE_KEY),
-    );
-    if (savedPcAxes) setPcAxes(savedPcAxes);
-
-    setIsHydrated(true);
-  }, []);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (!isHydrated) return;
-    if (!chartColourPalettes.has(palette)) return;
-
-    window.localStorage.setItem(PALETTE_STORAGE_KEY, palette);
-  }, [isHydrated, palette]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (!isHydrated) return;
-    window.localStorage.setItem(
-      ADVANCED_PLOT_SETTINGS_STORAGE_KEY,
-      String(advancedPlotSettings),
-    );
-  }, [isHydrated, advancedPlotSettings]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (!isHydrated) return;
-    window.localStorage.setItem(PC_AXES_STORAGE_KEY, JSON.stringify(pcAxes));
-  }, [isHydrated, pcAxes]);
-
-  useEffect(() => {
-    if (!isHydrated) return;
-    window.localStorage.setItem(RESIZABLE_PLOT_STORAGE_KEY, String(resizablePlot));
-    window.localStorage.setItem(SQUARE_PLOT_STORAGE_KEY, String(squarePlot));
-  }, [isHydrated, resizablePlot, squarePlot]);
+  const palette = useLocalStorageStore(paletteStore);
+  const advancedPlotSettings = useLocalStorageStore(advancedPlotSettingsStore);
+  const pcAxes = useLocalStorageStore(pcAxesStore);
+  const resizablePlot = useLocalStorageStore(resizablePlotStore);
+  const squarePlot = useLocalStorageStore(squarePlotStore);
+  const isHydrated = useIsHydrated();
 
   // Effective values: fall back to defaults when advanced settings are off so
   // the plot renders the standard PC1/PC2 2D view at a fixed size. Stored
@@ -217,13 +150,13 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
         palette,
         setPalette,
         advancedPlotSettings,
-        setAdvancedPlotSettings,
+        setAdvancedPlotSettings: advancedPlotSettingsStore.set,
         pcAxes: effectivePcAxes, // grabs calcuated value above
         setPcAxes,
         resizablePlot: advancedPlotSettings && resizablePlot,
-        setResizablePlot,
+        setResizablePlot: resizablePlotStore.set,
         squarePlot: advancedPlotSettings && squarePlot,
-        setSquarePlot,
+        setSquarePlot: squarePlotStore.set,
         isHydrated,
       }}
     >
